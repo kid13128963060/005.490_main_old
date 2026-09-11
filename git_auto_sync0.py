@@ -29,7 +29,9 @@ def git_auto_sync(commit_prefix: str) -> None:
 
     # 4 git push
     print("\n[4/4] git push 推送至远程仓库")
-    ret_push = subprocess.run(["git", "push"])
+    # ret_push = subprocess.run(["git", "push"])
+    ret_push = subprocess.run(["git", "push", "-f"])
+
     if ret_push.returncode != 0:
         print("git push failed")
         input("按回车退出...")
