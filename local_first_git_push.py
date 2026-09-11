@@ -10,7 +10,7 @@ if __name__ == "__main__":
     print(f"读取到模拟器标识：{CELL_READ_CONST}")
 
     # 固定提交前缀
-    CommitPrefix = "old.删除条件判断选择local_first_git_push_V1.0.002"
+    CommitPrefix = "old.增加调试配置文件"
     print(f"选定提交前缀：{CommitPrefix}")
     # 执行完整git同步
     git_auto_sync(CommitPrefix)
