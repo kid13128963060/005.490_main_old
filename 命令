@@ -2,11 +2,12 @@
 //同步
 git pull   #拉取远程更新
 git add .
-git commit -m "工脑_old_1.1.1.09007"  
+git commit -m "工脑_old_1.1.1.09009"  
 
 git commit --amend -m "工脑_old_1.1.1.09008"  #提交(说明)
 
 git push   #推送本地修改
+git push -f
 .\
 .\git_auto_sync0.ps1
 .\Git一键同步脚本\git_auto_sync090902.ps1
