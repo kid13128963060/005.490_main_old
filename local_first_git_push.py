@@ -1,4 +1,4 @@
-# 说明本地修改上传推送local_first_git_push_V1.0.002
+# 说明本地修改上传推送local_first_git_push_V1.0.003
 from read_excel_const import read_simulator_cell
 from git_auto_sync0 import git_auto_sync
 
@@ -10,7 +10,7 @@ if __name__ == "__main__":
     print(f"读取到模拟器标识：{CELL_READ_CONST}")
 
     # 固定提交前缀
-    CommitPrefix = "old.测试推送_1.1.1.09007"
+    CommitPrefix = "old.测试推送Ok_V1.0.003"
     print(f"选定提交前缀：{CommitPrefix}")
     # 执行完整git同步
     git_auto_sync(CommitPrefix)
