@@ -10,7 +10,7 @@ if __name__ == "__main__":
     print(f"读取到模拟器标识：{CELL_READ_CONST}")
 
     # 固定提交前缀
-    CommitPrefix = "old.主任务删除远程仓库master分支成功_1.1.1.09004"
+    CommitPrefix = "old.测试硬重置_1.1.1.09006"
     print(f"选定提交前缀：{CommitPrefix}")
     # 执行完整git同步
     git_auto_sync(CommitPrefix)
