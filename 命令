@@ -2,7 +2,7 @@
 //同步
 git pull   #拉取远程更新
 git add .
-git commit -m "工脑_old_1.1.1.09009"  
+git commit -m "工脑_old_1.1.1.09010"  
 
 git commit --amend -m "工脑_old_1.1.1.09008"  #提交(说明)
 
