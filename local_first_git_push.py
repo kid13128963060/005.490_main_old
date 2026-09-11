@@ -1,4 +1,4 @@
-# 说明本地修改上传推送
+# 说明本地修改上传推送local_first_git_push_V1.0.002
 from read_excel_const import read_simulator_cell
 from git_auto_sync0 import git_auto_sync
 
@@ -9,14 +9,8 @@ if __name__ == "__main__":
     CELL_READ_CONST = read_simulator_cell(EXCEL_FILE)
     print(f"读取到模拟器标识：{CELL_READ_CONST}")
 
-    # 条件判断选择提交前缀
-    if CELL_READ_CONST == "家脑模拟器":
-        CommitPrefix = "old_1.1.1.09002"
-    elif CELL_READ_CONST == "工脑模拟器":
-        CommitPrefix = "old_主任务_1.1.1.09002ok"
-    else:
-        raise ValueError(f"未知模拟器类型：{CELL_READ_CONST}，无法选择git提交前缀")
-
+    # 固定提交前缀
+    CommitPrefix = "删除条件判断选择local_first_git_push_V1.0.002"
     print(f"选定提交前缀：{CommitPrefix}")
     # 执行完整git同步
     git_auto_sync(CommitPrefix)
