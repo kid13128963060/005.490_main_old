@@ -1,0 +1,15 @@
+//Git
+//同步
+git pull   #拉取远程更新
+git add .
+git commit -m "Git一键同步脚本0909ok"
+git push   #推送本地修改
+.\
+.\git_auto_sync0.ps1
+.\Git一键同步脚本\git_auto_sync090902.ps1
+
+#ollama
+
+ollama --version  # 查看版本
+
+ollama list  # 查看模型
