@@ -13,7 +13,7 @@ if __name__ == "__main__":
     if CELL_READ_CONST == "家脑模拟器":
         CommitPrefix = "old_1.1.1.09002"
     elif CELL_READ_CONST == "工脑模拟器":
-        CommitPrefix = "old_主任务_1.1.1.09001ok"
+        CommitPrefix = "old_主任务_1.1.1.09002ok"
     else:
         raise ValueError(f"未知模拟器类型：{CELL_READ_CONST}，无法选择git提交前缀")
 
