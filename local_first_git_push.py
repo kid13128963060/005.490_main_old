@@ -3,7 +3,7 @@ from git_auto_sync0 import git_auto_sync
 
 
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
-CommitPrefix = "old.local_first_git_pushV1.0.05"
+CommitPrefix = "old.增加 Tkinter 单选框选择仓库local_first_git_pushV1.0.05"
 
 # ============仓库选择变量 1=main仓库，2=main_old仓库============
 SELECT_REPO = 2   # 修改这里切换目标git仓库
