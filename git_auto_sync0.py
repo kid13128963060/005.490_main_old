@@ -1,3 +1,5 @@
+# V1.0.03 2023-09-10
+# 1. 增加前置校验：判断仓库路径是否真实存在
 import subprocess
 from datetime import datetime
 import os
