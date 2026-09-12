@@ -1,9 +1,10 @@
+# V1.0.04 2023-09-10
 from read_excel_const import read_simulator_cell
 from git_auto_sync0 import git_auto_sync
 
 
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
-CommitPrefix = "old.增加前置校验：判断仓库路径是否真实存在"
+CommitPrefix = "old.Oklocal_first_git_pushV1.0.04 2023-09-10"
 
 # ========= Git仓库绝对路径，必须 r"" 原始字符串，不要去掉r！ =========
 GIT_REPOSITORY = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
