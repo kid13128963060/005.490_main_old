@@ -1,8 +1,13 @@
 任务名
 主任务_1.1.1.09010
-old.主任务_1.1.1.09006
+old.主任务_1.1.1.09007
 git_auto_sync0_1.1.1.09001
-//Git
+
+重载 VSCode 窗口
+1	快捷键 Ctrl+Shift+P → 输入 
+Reload Window
+
+Git
 //同步
 git pull   #拉取远程更新
 git add .
