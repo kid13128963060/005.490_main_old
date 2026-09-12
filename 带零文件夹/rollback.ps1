@@ -5,7 +5,7 @@
 #>
 
 # 定义提交哈希常量
-$TARGET_COMMIT_HASH = "71c8f40c52724b291e8b292b5288704ddafa151b"
+$TARGET_COMMIT_HASH = "c6bd0fc96b7d5882f98a957a98aaac828c6e7e16"
 
 git fetch origin
 git reset --hard $TARGET_COMMIT_HASH
