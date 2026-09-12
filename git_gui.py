@@ -1,3 +1,4 @@
+# V1.0.1
 import tkinter as tk
 from tkinter import scrolledtext
 import threading
@@ -5,9 +6,10 @@ import threading
 from read_excel_const import read_simulator_cell
 from git_auto_sync0 import git_auto_sync
 
+
 # --------------------------配置区--------------------------
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
-CommitPrefix = "old.测试OkGUI删多余文字"  # 提交前缀，方便在Git历史中区分
+CommitPrefix = "old.测试OkGUI删多余文字02"  # 提交前缀，方便在Git历史中区分
 
 REPO_1 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main"
 REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
@@ -85,13 +87,13 @@ def run_git_task(log_widget, select_repo_value, root, state: GuiState):
 
         if select_repo_value == 1:
             GIT_REPOSITORY = REPO_1
-            print(f"✅ SELECT_REPO = {select_repo_value} 选择仓库：005.490_main")
+            print(f"✅ 选择仓库：005.490_main")
         elif select_repo_value == 2:
             GIT_REPOSITORY = REPO_2
-            print(f"✅ SELECT_REPO = {select_repo_value} 选择仓库：005.490_main_old")
+            print(f"✅ 选择仓库：005.490_main_old")
         else:
             raise ValueError(
-                "SELECT_REPO只能填写1或者2！1代表005.490_main，2代表005.490_main_old")
+                "只能填写1或者2！1代表005.490_main，2代表005.490_main_old")
 
         print(f"目标Git仓库路径：{GIT_REPOSITORY}")
         git_auto_sync(CommitPrefix, repo_cwd=GIT_REPOSITORY)
@@ -123,20 +125,22 @@ def build_window():
     root.geometry("780x560")
 
     app_state = GuiState()
-    var_select_repo = tk.IntVar(value=2)  # 默认SELECT_REPO=2 main_old
+    var_select_repo = tk.IntVar(value=2)  # 默认=2 main_old
 
+    # ✅修改分组标题，移除SELECT_REPO
     frame_repo = tk.LabelFrame(
-        root, text="选择Git目标仓库（赋值SELECT_REPO）", font=("微软雅黑", 10))
+        root, text="选择Git目标仓库", font=("微软雅黑", 10))
     frame_repo.pack(padx=10, pady=6, fill=tk.X)
 
+    # ✅单选框文字删除 SELECT_REPO=1 / SELECT_REPO=2
     tk.Radiobutton(frame_repo,
-                   text="① SELECT_REPO=1 → 005.490_main仓库",
+                   text="① 005.490_main仓库",
                    variable=var_select_repo,
                    value=1,
                    font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=20, pady=8)
 
     tk.Radiobutton(frame_repo,
-                   text="② SELECT_REPO=2 → 005.490_main_old仓库",
+                   text="② 005.490_main_old仓库",
                    variable=var_select_repo,
                    value=2,
                    font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=20, pady=8)
