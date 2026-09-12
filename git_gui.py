@@ -7,7 +7,7 @@ from git_auto_sync0 import git_auto_sync
 
 # --------------------------配置区--------------------------
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
-CommitPrefix = "old.Oklocal_first_git_pushV1.0.07"
+CommitPrefix = "old.Oklocal_first_git_pushV1.0.08"
 
 REPO_1 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main"
 REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
