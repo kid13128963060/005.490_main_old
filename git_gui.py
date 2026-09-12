@@ -7,7 +7,7 @@ from git_auto_sync0 import git_auto_sync
 
 # --------------------------配置区--------------------------
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
-CommitPrefix = "old.测试N取消local_first_git_pushV1.0.09"
+CommitPrefix = "old.local_first_git_pushV1.0.09Ok"
 
 REPO_1 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main"
 REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
@@ -15,76 +15,74 @@ REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资�
 
 
 class TextRedirector:
-    """把print打印重定向到tkinter文本框，控制台输出同步显示UI"""
+    """print重定向写入日志框，**不再禁用控件**，保留用户输入权限"""
 
     def __init__(self, widget):
         self.widget = widget
 
     def write(self, s):
-        self.widget.configure(state="normal")
         self.widget.insert(tk.END, s)
         self.widget.see(tk.END)
-        self.widget.configure(state="disabled")
 
     def flush(self):
         pass
 
 
 class GuiState:
-    """全局状态：控制倒计时是否取消"""
+    """全局状态：控制倒计时是否取消、任务是否正在运行"""
 
     def __init__(self):
         self.cancel_close = False
+        self.task_running = False
 
 
 def count_down_close(root, log_widget, state: GuiState):
-    """5秒倒计时关闭窗口，不需要弹窗；输入n取消关闭"""
-    count = 12
-    log_widget.configure(state="normal")
+    """5秒倒计时关闭，无弹窗；输入n回车取消关闭"""
+    count = 5
     log_widget.insert(tk.END, "\n====任务执行完毕====\n5秒后自动关闭窗口，在下方输入 n 按回车 保持窗口\n")
     log_widget.see(tk.END)
-    log_widget.configure(state="disabled")
 
     def timer():
         nonlocal count
         if state.cancel_close:
-            log_widget.configure(state="normal")
             log_widget.insert(tk.END, ">>>收到指令 n，已取消自动关闭\n")
             log_widget.see(tk.END)
-            log_widget.configure(state="disabled")
             return
         if count <= 0:
             root.destroy()
             return
-        log_widget.configure(state="normal")
         log_widget.insert(tk.END, f"倒计时 {count} s\n")
         log_widget.see(tk.END)
-        log_widget.configure(state="disabled")
         count -= 1
         root.after(1000, timer)
     timer()
 
 
-def on_log_enter(event, state: GuiState):
-    """日志框按回车触发：检测最后一行是否输入n"""
-    widget = event.widget
-    content = widget.get("end-2l linestart", tk.END).strip().lower()
-    if content == "n":
+def on_log_enter(event, state: GuiState, log_widget):
+    """回车事件：读取最后一行输入，检测是否为n"""
+    # 任务未结束，忽略输入
+    if state.task_running:
+        return
+    # 获取最后一行内容
+    last_line = log_widget.get("end-2l linestart", tk.END).strip().lower()
+    if last_line == "n":
         state.cancel_close = True
+        # 清除输入的n，界面干净
+        log_widget.delete("end-2l linestart", tk.END)
 
 
 def run_git_task(log_widget, select_repo_value, root, state: GuiState):
-    """实际执行git同步逻辑，运行在子线程，防止窗口卡死"""
+    """git业务逻辑，子线程运行"""
     import sys
     old_stdout = sys.stdout
     sys.stdout = TextRedirector(log_widget)
+    state.task_running = True
     try:
         print("=====开始执行任务=====\n")
         CELL_READ_CONST = read_simulator_cell(EXCEL_FILE)
         print(f"读取到模拟器标识：{CELL_READ_CONST}")
         print(f"选定提交前缀：{CommitPrefix}")
 
-        # 条件判断选择仓库，和local_first_git_push.py逻辑保持一致
         if select_repo_value == 1:
             GIT_REPOSITORY = REPO_1
             print(f"✅ SELECT_REPO = {select_repo_value} 选择仓库：005.490_main")
@@ -102,14 +100,17 @@ def run_git_task(log_widget, select_repo_value, root, state: GuiState):
         print(f"\n程序异常：{e}")
     finally:
         sys.stdout = old_stdout
-        # 交给主线程执行倒计时
+        state.task_running = False
+        state.cancel_close = False
         root.after(0, lambda: count_down_close(root, log_widget, state))
 
 
 def on_button_click(text_area, var_repo, root, state):
-    """按钮点击回调，启动子线程执行git，不阻塞UI"""
+    """按钮点击，启动子线程"""
+    # 任务正在运行，禁止重复点击
+    if state.task_running:
+        return
     selected = var_repo.get()
-    state.cancel_close = False
     t = threading.Thread(target=run_git_task, args=(
         text_area, selected, root, state))
     t.daemon = True
@@ -122,11 +123,8 @@ def build_window():
     root.geometry("780x560")
 
     app_state = GuiState()
+    var_select_repo = tk.IntVar(value=2)  # 默认SELECT_REPO=2 main_old
 
-    # SELECT_REPO 单选框变量，默认=2(main_old)
-    var_select_repo = tk.IntVar(value=2)
-
-    # 仓库选择分组框
     frame_repo = tk.LabelFrame(
         root, text="选择Git目标仓库（赋值SELECT_REPO）", font=("微软雅黑", 10))
     frame_repo.pack(padx=10, pady=6, fill=tk.X)
@@ -143,18 +141,16 @@ def build_window():
                    value=2,
                    font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=20, pady=8)
 
-    # 执行按钮
     btn_run = tk.Button(root, text="🔘执行Git一键同步",
                         font=("微软雅黑", 11),
                         command=lambda: on_button_click(log_text, var_select_repo, root, app_state))
     btn_run.pack(pady=8)
 
-    # 滚动日志文本框（可输入，回车检测n）
+    # 重点：不再设置disabled，控件全程可编辑
     log_text = scrolledtext.ScrolledText(
         root, wrap=tk.WORD, font=("Consolas", 9))
     log_text.pack(fill=tk.BOTH, expand=True, padx=8, pady=5)
-    # 绑定回车键：输入n回车取消关闭
-    log_text.bind("<Return>", lambda e: on_log_enter(e, app_state))
+    log_text.bind("<Return>", lambda e: on_log_enter(e, app_state, log_text))
 
     root.mainloop()
 
