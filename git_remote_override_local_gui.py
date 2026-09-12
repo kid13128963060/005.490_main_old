@@ -4,7 +4,6 @@ import tkinter as tk
 from tkinter import scrolledtext
 import threading
 
-
 # --------------------------配置区【与git_gui模块完全保持一致】--------------------------
 REPO_1 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main"
 REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
@@ -72,16 +71,15 @@ def run_override_task(log_widget, select_repo_value, root):
     try:
         print("=====开始执行【远程覆盖本地】任务=====\n")
 
-        # 条件判断选择仓库，和local_first_git_push逻辑保持一致
+        # 条件判断选择仓库，和local_first_git_push.py逻辑保持一致
         if select_repo_value == 1:
             GIT_REPOSITORY = REPO_1
-            print(f"✅ SELECT_REPO = {select_repo_value} 选择仓库：005.490_main")
+            print(f"✅ 选择仓库：005.490_main")
         elif select_repo_value == 2:
             GIT_REPOSITORY = REPO_2
-            print(f"✅ SELECT_REPO = {select_repo_value} 选择仓库：005.490_main_old")
+            print(f"✅ 选择仓库：005.490_main_old")
         else:
-            raise ValueError(
-                "SELECT_REPO只能填写1或者2！1代表005.490_main，2代表005.490_main_old")
+            raise ValueError("只能选择1或者2！1代表005.490_main，2代表005.490_main_old")
 
         print(f"目标Git仓库路径：{GIT_REPOSITORY}")
         git_remote_override_local(repo_cwd=GIT_REPOSITORY)
@@ -90,7 +88,7 @@ def run_override_task(log_widget, select_repo_value, root):
         print(f"\n程序异常：{e}")
     finally:
         sys.stdout = old_stdout
-        # 任务结束直接关闭窗口（无论成功/失败）
+        # 无论成功失败，主线程执行关闭窗口
         root.after(0, root.destroy)
 
 
@@ -110,19 +108,19 @@ def build_window():
 
     var_select_repo = tk.IntVar(value=2)  # 默认选中2(main_old)
 
-    # 仓库选择分组框
+    # 仓库选择分组框，UI移除SELECT_REPO文字
     frame_repo = tk.LabelFrame(
-        root, text="选择Git目标仓库（赋值SELECT_REPO）", font=("微软雅黑", 10))
+        root, text="选择Git目标仓库", font=("微软雅黑", 10))
     frame_repo.pack(padx=10, pady=6, fill=tk.X)
 
     tk.Radiobutton(frame_repo,
-                   text="① SELECT_REPO=1 → 005.490_main仓库",
+                   text="① 005.490_main仓库",
                    variable=var_select_repo,
                    value=1,
                    font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=20, pady=8)
 
     tk.Radiobutton(frame_repo,
-                   text="② SELECT_REPO=2 → 005.490_main_old仓库",
+                   text="② 005.490_main_old仓库",
                    variable=var_select_repo,
                    value=2,
                    font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=20, pady=8)
@@ -133,7 +131,7 @@ def build_window():
                         command=lambda: on_button_click(log_text, var_select_repo, root))
     btn_run.pack(pady=8)
 
-    # 滚动日志文本框
+    # 滚动日志文本框，不绑定回车键
     log_text = scrolledtext.ScrolledText(
         root, wrap=tk.WORD, font=("Consolas", 9))
     log_text.pack(fill=tk.BOTH, expand=True, padx=8, pady=5)
@@ -142,7 +140,7 @@ def build_window():
 
 
 if __name__ == "__main__":
-    # GUI图形界面模式（默认）
+    # GUI图形界面模式（默认启动入口）
     build_window()
 
     # =========命令行脚本模式，取消注释即可直接运行不启动GUI=========
@@ -152,7 +150,6 @@ if __name__ == "__main__":
     # elif SELECT_REPO == 2:
     #     GIT_REPOSITORY = REPO_2
     # else:
-    #     raise ValueError("SELECT_REPO只能填写1或者2！1代表005.490_main，2代表005.490_main_old")
-    # print(f"当前选择仓库编号 SELECT_REPO = {SELECT_REPO}")
+    #     raise ValueError("只能选择1或者2！1代表005.490_main，2代表005.490_main_old")
     # print(f"目标Git仓库路径：{GIT_REPOSITORY}")
     # git_remote_override_local(repo_cwd=GIT_REPOSITORY)
