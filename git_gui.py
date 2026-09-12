@@ -38,7 +38,7 @@ class GuiState:
 
 def count_down_close(root, log_widget, state: GuiState):
     """5秒倒计时关闭，无弹窗；输入n回车取消关闭"""
-    count = 10
+    count = 6
     log_widget.insert(tk.END, "\n====任务执行完毕====\n5秒后自动关闭窗口，在下方输入 n 按回车 保持窗口\n")
     log_widget.see(tk.END)
 
