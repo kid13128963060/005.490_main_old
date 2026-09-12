@@ -2,7 +2,7 @@ from read_excel_const import read_simulator_cell
 from git_auto_sync0 import git_auto_sync
 
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
-CommitPrefix = "old.回滚脚本测试Ok"  # 固定提交前缀，避免误操作
+CommitPrefix = "old.主任务_1.1.1.09005"  # 固定提交前缀，避免误操作
 
 if __name__ == "__main__":
     # 读取excel常量
