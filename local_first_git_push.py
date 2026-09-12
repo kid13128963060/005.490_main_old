@@ -2,7 +2,7 @@ from read_excel_const import read_simulator_cell
 from git_auto_sync0 import git_auto_sync
 
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
-CommitPrefix = "old.一键保存关闭V1.0.02没有"  # 固定提交前缀，避免误操作
+CommitPrefix = "old.一键保存关闭V1.0.03"  # 固定提交前缀，避免误操作
 
 if __name__ == "__main__":
     # 读取excel常量
