@@ -7,7 +7,7 @@ from git_auto_sync0 import git_auto_sync
 
 # --------------------------配置区--------------------------
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
-CommitPrefix = "old.local_first_git_pushV1.0.09Ok"
+CommitPrefix = "old.测试N取消local_first_git_pushV1.0.09"
 
 REPO_1 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main"
 REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
@@ -39,7 +39,7 @@ class GuiState:
 
 def count_down_close(root, log_widget, state: GuiState):
     """5秒倒计时关闭窗口，不需要弹窗；输入n取消关闭"""
-    count = 5
+    count = 12
     log_widget.configure(state="normal")
     log_widget.insert(tk.END, "\n====任务执行完毕====\n5秒后自动关闭窗口，在下方输入 n 按回车 保持窗口\n")
     log_widget.see(tk.END)
