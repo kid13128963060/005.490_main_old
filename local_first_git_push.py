@@ -10,7 +10,7 @@ if __name__ == "__main__":
     print(f"读取到模拟器标识：{CELL_READ_CONST}")
 
     # 固定提交前缀
-    CommitPrefix = "old.从主文件夹复制了一个文件"
+    CommitPrefix = "old.主任务_1.1.1.09004Ok"
     print(f"选定提交前缀：{CommitPrefix}")
     # 执行完整git同步
     git_auto_sync(CommitPrefix)
