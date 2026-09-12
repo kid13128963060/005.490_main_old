@@ -9,8 +9,61 @@ import pythoncom
 import subprocess
 import threading
 
+
+def save_vscode_all_files():
+    """查找所有VSCode窗口，发送 Ctrl+K S 保存全部修改文件"""
+    VSCODE_TITLE_KEYWORD = "Visual Studio Code"
+    vscode_hwnds = []
+
+    def enum_callback(hwnd, extra):
+        if win32gui.IsWindowVisible(hwnd):
+            win_title = win32gui.GetWindowText(hwnd)
+            if VSCODE_TITLE_KEYWORD in win_title:
+                extra.append(hwnd)
+        return True
+
+    win32gui.EnumWindows(enum_callback, vscode_hwnds)
+    print(f"找到 {len(vscode_hwnds)} 个VSCode窗口")
+
+    for hwnd in vscode_hwnds:
+        if not win32gui.IsWindow(hwnd):
+            continue
+        title = win32gui.GetWindowText(hwnd)
+        print(f"处理VSCode窗口：{title} 句柄={hwnd}")
+        try:
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            try:
+                win32gui.SetForegroundWindow(hwnd)
+            except Exception:
+                print("  无法前置窗口，继续发送快捷键")
+            time.sleep(0.4)
+
+            # Ctrl+K 然后 S 保存全部
+            win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
+            time.sleep(0.1)
+            win32api.keybd_event(ord('K'), 0, 0, 0)
+            time.sleep(0.15)
+            win32api.keybd_event(ord('K'), 0, win32con.KEYEVENTF_KEYUP, 0)
+            time.sleep(0.1)
+            win32api.keybd_event(ord('S'), 0, 0, 0)
+            time.sleep(0.15)
+            win32api.keybd_event(ord('S'), 0, win32con.KEYEVENTF_KEYUP, 0)
+            win32api.keybd_event(win32con.VK_CONTROL, 0,
+                                 win32con.KEYEVENTF_KEYUP, 0)
+
+            time.sleep(0.6)
+            print(f"✅ {title} 已执行保存全部")
+        except Exception as e:
+            print(f"❌ 异常: {str(e)}")
+    print("VSCode保存处理完成")
+
+
+if __name__ == "__main__":
+    save_vscode_all_files()
+
+
 # 配置常量：关机倒计时秒数
-SHUTDOWN_DELAY = 10
+SHUTDOWN_DELAY = 60
 
 
 def close_all_word_documents():
