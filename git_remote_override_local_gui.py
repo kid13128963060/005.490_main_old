@@ -90,13 +90,15 @@ def run_override_task(log_widget, select_repo_value, root):
         print(f"\n程序异常：{e}")
     finally:
         sys.stdout = old_stdout
+        # 任务结束直接关闭窗口（无论成功/失败）
+        root.after(0, root.destroy)
 
 
-def on_button_click(text_area, var_repo):
+def on_button_click(text_area, var_repo, root):
     """按钮点击回调，启动子线程执行任务，不阻塞UI【复制自git_gui】"""
     selected = var_repo.get()
     t = threading.Thread(target=run_override_task,
-                         args=(text_area, selected, None))
+                         args=(text_area, selected, root))
     t.daemon = True
     t.start()
 
@@ -128,7 +130,7 @@ def build_window():
     # 执行按钮
     btn_run = tk.Button(root, text="🔘执行远程仓库覆盖本地",
                         font=("微软雅黑", 11),
-                        command=lambda: on_button_click(log_text, var_select_repo))
+                        command=lambda: on_button_click(log_text, var_select_repo, root))
     btn_run.pack(pady=8)
 
     # 滚动日志文本框
