@@ -63,7 +63,6 @@ def save_vscode_all_files():
 if __name__ == "__main__":
     save_vscode_all_files()
 
-
 # 配置常量：关机倒计时秒数
 SHUTDOWN_DELAY = 60
 
@@ -211,6 +210,7 @@ def start_shutdown(countdown_sec: int):
 
 
 if __name__ == "__main__":
+    save_vscode_all_files()
     close_all_word_documents()
     force_save_and_close_notepad()
 
