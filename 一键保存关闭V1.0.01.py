@@ -1,3 +1,5 @@
+from multiprocessing.resource_sharer import stop
+
 import win32com.client
 import win32gui
 import win32con
