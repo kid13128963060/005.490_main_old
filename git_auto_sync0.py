@@ -49,4 +49,4 @@ def git_auto_sync(commit_prefix: str, repo_cwd: str) -> None:
 
 if __name__ == "__main__":
     TEST_REPO = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
-    git_auto_sync("家脑_091006ok", repo_cwd=TEST_REPO)
+    git_auto_sync("old.主任务_1.1.1.09008", repo_cwd=TEST_REPO)

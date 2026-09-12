@@ -3,7 +3,7 @@ from git_auto_sync0 import git_auto_sync
 
 
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
-CommitPrefix = "old.增加前置校验：判断仓库路径是否真实存在"
+CommitPrefix = "old.local_first_git_pushV1.0.05"
 
 # ============仓库选择变量 1=main仓库，2=main_old仓库============
 SELECT_REPO = 2   # 修改这里切换目标git仓库
