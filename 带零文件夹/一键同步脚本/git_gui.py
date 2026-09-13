@@ -1,11 +1,11 @@
-# V1.0.1
+# V1.0.2
+
 import tkinter as tk
 from tkinter import scrolledtext
 import threading
 
 from read_excel_const import read_simulator_cell
 from git_auto_sync0 import git_auto_sync
-
 
 # --------------------------配置区--------------------------
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
@@ -62,28 +62,29 @@ def count_down_close(root, log_widget, state: GuiState):
 
 def on_log_enter(event, state: GuiState, log_widget):
     """回车事件：读取最后一行输入，检测是否为n"""
-    # 任务未结束，忽略输入
     if state.task_running:
         return
-    # 获取最后一行内容
     last_line = log_widget.get("end-2l linestart", tk.END).strip().lower()
     if last_line == "n":
         state.cancel_close = True
-        # 清除输入的n，界面干净
         log_widget.delete("end-2l linestart", tk.END)
 
 
-def run_git_task(log_widget, select_repo_value, root, state: GuiState):
-    """git业务逻辑，子线程运行"""
+def run_git_task(log_widget, select_repo_value, commit_prefix_input, root, state: GuiState):
+    """git业务逻辑，子线程运行，新增commit_prefix_input参数"""
     import sys
     old_stdout = sys.stdout
     sys.stdout = TextRedirector(log_widget)
     state.task_running = True
+    # 使用界面输入；输入为空回退配置默认值
+    use_prefix = commit_prefix_input.strip()
+    if not use_prefix:
+        use_prefix = CommitPrefix
     try:
         print("=====开始执行任务=====\n")
         CELL_READ_CONST = read_simulator_cell(EXCEL_FILE)
         print(f"读取到模拟器标识：{CELL_READ_CONST}")
-        print(f"选定提交前缀：{CommitPrefix}")
+        print(f"选定提交前缀：{use_prefix}")
 
         if select_repo_value == 1:
             GIT_REPOSITORY = REPO_1
@@ -96,7 +97,7 @@ def run_git_task(log_widget, select_repo_value, root, state: GuiState):
                 "只能填写1或者2！1代表005.490_main，2代表005.490_main_old")
 
         print(f"目标Git仓库路径：{GIT_REPOSITORY}")
-        git_auto_sync(CommitPrefix, repo_cwd=GIT_REPOSITORY)
+        git_auto_sync(use_prefix, repo_cwd=GIT_REPOSITORY)
 
     except Exception as e:
         print(f"\n程序异常：{e}")
@@ -107,14 +108,14 @@ def run_git_task(log_widget, select_repo_value, root, state: GuiState):
         root.after(0, lambda: count_down_close(root, log_widget, state))
 
 
-def on_button_click(text_area, var_repo, root, state):
-    """按钮点击，启动子线程"""
-    # 任务正在运行，禁止重复点击
+def on_button_click(text_area, var_repo, entry_prefix, root, state):
+    """按钮点击，接收输入框控件，启动子线程"""
     if state.task_running:
         return
     selected = var_repo.get()
+    input_text = entry_prefix.get()
     t = threading.Thread(target=run_git_task, args=(
-        text_area, selected, root, state))
+        text_area, selected, input_text, root, state))
     t.daemon = True
     t.start()
 
@@ -122,17 +123,23 @@ def on_button_click(text_area, var_repo, root, state):
 def build_window():
     root = tk.Tk()
     root.title("Git一键同步工具 Tkinter版")
-    root.geometry("780x560")
+    root.geometry("780x620")
 
     app_state = GuiState()
     var_select_repo = tk.IntVar(value=2)  # 默认=2 main_old
 
-    # ✅修改分组标题，移除SELECT_REPO
+    # =========新增CommitPrefix输入框UI=========
+    frame_prefix = tk.LabelFrame(
+        root, text="提交注释 CommitPrefix", font=("微软雅黑", 10))
+    frame_prefix.pack(padx=10, pady=4, fill=tk.X)
+    entry_commit = tk.Entry(frame_prefix, font=("Consolas", 10))
+    entry_commit.pack(fill=tk.X, padx=8, pady=8)
+    entry_commit.insert(0, CommitPrefix)
+
     frame_repo = tk.LabelFrame(
         root, text="选择Git目标仓库", font=("微软雅黑", 10))
     frame_repo.pack(padx=10, pady=6, fill=tk.X)
 
-    # ✅单选框文字删除 SELECT_REPO=1 / SELECT_REPO=2
     tk.Radiobutton(frame_repo,
                    text="① 005.490_main仓库",
                    variable=var_select_repo,
@@ -147,10 +154,9 @@ def build_window():
 
     btn_run = tk.Button(root, text="🔘执行Git一键同步",
                         font=("微软雅黑", 11),
-                        command=lambda: on_button_click(log_text, var_select_repo, root, app_state))
+                        command=lambda: on_button_click(log_text, var_select_repo, entry_commit, root, app_state))
     btn_run.pack(pady=8)
 
-    # 重点：不再设置disabled，控件全程可编辑
     log_text = scrolledtext.ScrolledText(
         root, wrap=tk.WORD, font=("Consolas", 9))
     log_text.pack(fill=tk.BOTH, expand=True, padx=8, pady=5)
