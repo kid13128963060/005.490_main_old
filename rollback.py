@@ -1,4 +1,4 @@
-# V1.0.1 增加仓库选择，支持外部目录运行
+# V1.0.1 增加仓库选择，支持外部目录运行测试
 import subprocess
 import os
 
