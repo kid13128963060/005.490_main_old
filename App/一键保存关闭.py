@@ -1,3 +1,4 @@
+# V1.0.0901
 from multiprocessing.resource_sharer import stop
 
 import win32com.client
