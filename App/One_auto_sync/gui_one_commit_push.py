@@ -9,7 +9,7 @@ from git_auto_sync0 import git_auto_sync
 
 
 # --------------------------网络检测函数 socket原生--------------------------
-def check_network(timeout=3):
+def check_network(timeout=5):
     """检测外网连通，True联网，False断网"""
     try:
         socket.setdefaulttimeout(timeout)
@@ -23,7 +23,7 @@ def check_network(timeout=3):
 
 # --------------------------配置区--------------------------
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
-CommitPrefix = "old.测试Run快捷方式"  # 提交前缀，方便在Git历史中区分
+CommitPrefix = "old.测试中增加内置 socket 网络检测"  # 提交前缀，方便在Git历史中区分
 
 REPO_1 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main"
 REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
@@ -54,7 +54,7 @@ class GuiState:
 
 def count_down_close(root, log_widget, state: GuiState):
     """5秒倒计时关闭，无弹窗；输入n回车取消关闭"""
-    count = 5
+    count = 3
     log_widget.insert(tk.END, "\n====任务执行完毕====\n5秒后自动关闭窗口，在下方输入 n 按回车 保持窗口\n")
     log_widget.see(tk.END)
 
