@@ -1,10 +1,25 @@
-# V1.0.2
+# gui_one_commit_push.V1.0.02.09
 import tkinter as tk
 from tkinter import scrolledtext
 import threading
+import socket
 
 from read_excel_const import read_simulator_cell
 from git_auto_sync0 import git_auto_sync
+
+
+# --------------------------网络检测函数 socket原生--------------------------
+def check_network(timeout=3):
+    """检测外网连通，True联网，False断网"""
+    try:
+        socket.setdefaulttimeout(timeout)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(("223.5.5.5", 53))
+        s.close()
+        return True
+    except Exception:
+        return False
+
 
 # --------------------------配置区--------------------------
 EXCEL_FILE = r"E:\自动同步_只增加\设备识别\设备识别.xls"
@@ -39,7 +54,7 @@ class GuiState:
 
 def count_down_close(root, log_widget, state: GuiState):
     """5秒倒计时关闭，无弹窗；输入n回车取消关闭"""
-    count = 1
+    count = 5
     log_widget.insert(tk.END, "\n====任务执行完毕====\n5秒后自动关闭窗口，在下方输入 n 按回车 保持窗口\n")
     log_widget.see(tk.END)
 
@@ -80,6 +95,12 @@ def run_git_task(log_widget, select_repo_value, commit_prefix_input, root, state
     if not use_prefix:
         use_prefix = CommitPrefix
     try:
+        print("🔍正在检测外网连通性...")
+        if not check_network():
+            print("❌外网断开，无法访问远程Git仓库，任务终止！")
+            return
+        print("✅网络正常\n")
+
         print("=====开始执行任务=====\n")
         CELL_READ_CONST = read_simulator_cell(EXCEL_FILE)
         print(f"读取到模拟器标识：{CELL_READ_CONST}")
