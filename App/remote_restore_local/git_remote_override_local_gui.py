@@ -1,9 +1,11 @@
-# V1.0.1
+# remote_restore_localV1.0.3.09 增加3秒倒计时自动关闭窗口
 import subprocess
 import os
 import tkinter as tk
 from tkinter import scrolledtext
 import threading
+import time
+
 
 # --------------------------配置区【与git_gui模块完全保持一致】--------------------------
 REPO_1 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main"
@@ -64,6 +66,20 @@ class TextRedirector:
         pass
 
 
+def countdown_close(log_widget, root, remain: int):
+    """【新增】倒计时关闭窗口，在tk主线程执行"""
+    if remain <= 0:
+        root.destroy()
+        return
+    # 输出倒计时信息到日志框
+    log_widget.configure(state="normal")
+    log_widget.insert(tk.END, f"\n⏳ {remain}秒后自动关闭窗口...")
+    log_widget.see(tk.END)
+    log_widget.configure(state="disabled")
+    # 等待1秒，剩余秒数减一，递归调用
+    root.after(1000, lambda: countdown_close(log_widget, root, remain - 1))
+
+
 def run_override_task(log_widget, select_repo_value, root):
     """实际执行远程覆盖逻辑，运行在子线程，防止窗口卡死【仿照run_git_task】"""
     import sys
@@ -89,8 +105,8 @@ def run_override_task(log_widget, select_repo_value, root):
         print(f"\n程序异常：{e}")
     finally:
         sys.stdout = old_stdout
-        # 无论成功失败，主线程执行关闭窗口
-        root.after(0, root.destroy)
+        # -------- 修改点：不再直接destroy，交给倒计时函数，3秒倒计时 --------
+        root.after(0, lambda: countdown_close(log_widget, root, 3))
 
 
 def on_button_click(text_area, var_repo, root):
