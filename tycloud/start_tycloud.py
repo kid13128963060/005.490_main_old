@@ -1,4 +1,4 @@
-# version:1.6 天翼云盘启动脚本，pid锁文件防多实例(纯标准库，无需pywin32)；socket网络检测；最大等待秒数配置
+# version:1.9 天翼云盘启动脚本，修复点任务计划【运行】产生log文件冲突；pid锁文件防多实例(纯标准库)；socket网络检测；最大等待秒数配置
 import subprocess
 import os
 import socket
@@ -60,16 +60,15 @@ def is_process_running(process_name: str) -> bool:
 
 
 def check_pid_exist(pid: int) -> bool:
-    """Windows检查pid进程是否还在运行"""
+    """Windows检查pid进程是否还在运行，移除check=True，不抛出CalledProcessError"""
     try:
-        subprocess.run(
+        ret = subprocess.run(
             ["tasklist", "/fi", f"PID eq {pid}"],
             capture_output=True,
-            shell=False,
-            check=True
+            shell=False
         )
-        return True
-    except subprocess.CalledProcessError:
+        return ret.returncode == 0
+    except Exception:
         return False
 
 
@@ -85,8 +84,14 @@ def acquire_lock() -> bool:
             else:
                 # 锁文件残留，进程已经死掉，清理旧锁
                 os.remove(lock_file)
+                write_log(f"ℹ️清理过期锁文件，旧PID={old_pid}进程已不存在")
         except Exception:
-            os.remove(lock_file)
+            # 锁文件损坏，直接删除
+            try:
+                os.remove(lock_file)
+                write_log("ℹ️损坏的锁文件已清除")
+            except Exception:
+                pass
     # 写入当前pid
     with open(lock_file, "w", encoding="utf-8") as f:
         f.write(str(os.getpid()))
