@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# version: V1.0
 import xlrd
 
 EXCEL_PATH = r"E:\自动同步_只增加\设备识别\设备识别.xls"
@@ -16,3 +17,8 @@ def get_current_device():
     else:
         print("未匹配模拟器类型")
         return None
+
+# wrapper逻辑直接写入本文件末尾（要求3，不单独建wrapper_dev.py）
+if __name__ == "__main__":
+    res = get_current_device()
+    print(f"DEV_RET:{res}")
