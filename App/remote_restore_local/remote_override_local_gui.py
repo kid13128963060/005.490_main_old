@@ -1,4 +1,4 @@
-# V1.1.0 远程覆盖本地｜自动合并｜冲突取远程版本｜保留本地完整提交时间线
+# V1.2.0 远程覆盖本地｜自动合并｜冲突取远程｜保留本地时间线｜任务完成3秒倒计时关闭窗口
 import subprocess
 import os
 import tkinter as tk
@@ -12,16 +12,14 @@ REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资�
 
 
 def countdown_close(log_widget, root, remain: int):
-    """【新增】倒计时关闭窗口，在tk主线程执行"""
+    """倒计时关闭窗口，**仅在tk主线程执行**"""
     if remain <= 0:
         root.destroy()
         return
-    # 输出倒计时信息到日志框
     log_widget.configure(state="normal")
     log_widget.insert(tk.END, f"\n⏳ {remain}秒后自动关闭窗口...")
     log_widget.see(tk.END)
     log_widget.configure(state="disabled")
-    # 等待1秒，剩余秒数减一，递归调用
     root.after(1000, lambda: countdown_close(log_widget, root, remain - 1))
 
 
@@ -30,7 +28,6 @@ def git_remote_override_local(repo_cwd: str) -> None:
     远程仓库覆盖本地：自动合并，冲突以远程版本为主，保留本地完整提交时间线
     :param repo_cwd: Git仓库根目录(包含.git的文件夹绝对路径)
     """
-    # 前置校验，参考git_auto_sync0模块
     if not os.path.isdir(repo_cwd):
         raise FileNotFoundError(f"Git仓库路径不存在！\nrepo_cwd = {repo_cwd}")
     git_dot_git = os.path.join(repo_cwd, ".git")
@@ -47,7 +44,7 @@ def git_remote_override_local(repo_cwd: str) -> None:
         print("git fetch failed")
         raise SystemExit(1)
 
-    # -X theirs：合并冲突自动采用远程(theirs)版本，不会中断程序；--no-edit不修改合并提交信息
+    # -X theirs：合并冲突自动采用远程(theirs)版本；--no-edit不修改合并提交信息
     print("[2/3] git merge origin/main -X theirs --no-edit")
     ret_merge = subprocess.run(
         ["git", "merge", "origin/main", "-X", "theirs", "--no-edit"], cwd=repo_cwd
@@ -79,14 +76,12 @@ class TextRedirector:
 
 
 def run_override_task(log_widget, select_repo_value, root):
-    """实际执行远程覆盖逻辑，运行在子线程，防止窗口卡死【仿照run_git_task】"""
+    """子线程执行git任务，执行完毕后通过after调度主线程运行倒计时关闭"""
     import sys
     old_stdout = sys.stdout
     sys.stdout = TextRedirector(log_widget)
     try:
         print("=====开始执行【远程覆盖本地｜自动合并｜冲突取远程】任务=====\n")
-
-        # 条件判断选择仓库，和local_first_git_push逻辑保持一致
         if select_repo_value == 1:
             GIT_REPOSITORY = REPO_1
             print(f"✅ SELECT_REPO = {select_repo_value} 选择仓库：005.490_main")
@@ -101,23 +96,25 @@ def run_override_task(log_widget, select_repo_value, root):
         git_remote_override_local(repo_cwd=GIT_REPOSITORY)
 
     except Exception as e:
-        print(f"\n程序异常：{e}")
+        print(f"\n❌程序异常：{e}")
     finally:
         sys.stdout = old_stdout
+        # 【重点】子线程不能直接操作UI！用root.after把倒计时函数投递到主线程事件队列执行
+        root.after(0, lambda: countdown_close(log_widget, root, remain=3))
 
 
-def on_button_click(text_area, var_repo):
-    """按钮点击回调，启动子线程执行任务，不阻塞UI【复制自git_gui】"""
+def on_button_click(text_area, var_repo, root):
+    """按钮点击回调，启动子线程执行任务，不阻塞UI；传入root窗口对象"""
     selected = var_repo.get()
     t = threading.Thread(target=run_override_task,
-                         args=(text_area, selected, None))
+                         args=(text_area, selected, root))
     t.daemon = True
     t.start()
 
 
 def build_window():
     root = tk.Tk()
-    root.title("Git远程覆盖本地工具 Tkinter版 V1.1.0")
+    root.title("Git远程覆盖本地工具 Tkinter版 V1.2.0")
     root.geometry("780x560")
 
     var_select_repo = tk.IntVar(value=2)  # 默认选中2(main_old)
@@ -139,10 +136,10 @@ def build_window():
                    value=2,
                    font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=20, pady=8)
 
-    # 执行按钮
+    # 执行按钮：把root实例传入回调函数
     btn_run = tk.Button(root, text="🔘执行远程仓库覆盖本地(自动合并，冲突取远程)",
                         font=("微软雅黑", 11),
-                        command=lambda: on_button_click(log_text, var_select_repo))
+                        command=lambda: on_button_click(log_text, var_select_repo, root))
     btn_run.pack(pady=8)
 
     # 滚动日志文本框
