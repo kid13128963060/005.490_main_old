@@ -115,8 +115,7 @@ def main():
     print("\n>>>> 步骤3执行完毕，进入步骤4，准备执行文件4【start_tycloud.py】天翼云盘脚本")
     import time
     print("步骤3结束，等待15秒后再运行文件4……")
-    time.sleep(15)
-    run_script(FILE4, "文件4(天翼云盘启动脚本)")
+    time.sleep(60)
 
     # 业务分支逻辑
     if current_device == 1:
