@@ -1,4 +1,5 @@
-# gui_one_commit_push.V1.0.02.09
+# V1.0.0 本地推送远程｜提交注释输入框｜读取Excel模拟器标识
+# 网络检测｜3秒倒计时，输入n回车取消关闭｜批量双仓库｜任务锁防重复执行
 import tkinter as tk
 from tkinter import scrolledtext
 import threading
@@ -7,8 +8,9 @@ import socket
 from read_excel_const import read_simulator_cell
 from git_auto_sync0 import git_auto_sync
 
-
 # --------------------------网络检测函数 socket原生--------------------------
+
+
 def check_network(timeout=5):
     """检测外网连通，True联网，False断网"""
     try:
@@ -53,9 +55,9 @@ class GuiState:
 
 
 def count_down_close(root, log_widget, state: GuiState):
-    """5秒倒计时关闭，无弹窗；输入n回车取消关闭"""
+    """3秒倒计时关闭，无弹窗；输入n回车取消关闭；修复模板文案bug统一为3秒"""
     count = 3
-    log_widget.insert(tk.END, "\n====任务执行完毕====\n5秒后自动关闭窗口，在下方输入 n 按回车 保持窗口\n")
+    log_widget.insert(tk.END, "\n====任务执行完毕====\n3秒后自动关闭窗口，在下方输入 n 按回车 保持窗口\n")
     log_widget.see(tk.END)
 
     def timer():
@@ -85,7 +87,7 @@ def on_log_enter(event, state: GuiState, log_widget):
 
 
 def run_git_task(log_widget, select_repo_value, commit_prefix_input, root, state: GuiState):
-    """git业务逻辑，子线程运行，新增commit_prefix_input参数"""
+    """git业务逻辑，子线程运行，本地推送远程，支持批量仓库"""
     import sys
     old_stdout = sys.stdout
     sys.stdout = TextRedirector(log_widget)
@@ -101,23 +103,35 @@ def run_git_task(log_widget, select_repo_value, commit_prefix_input, root, state
             return
         print("✅网络正常\n")
 
-        print("=====开始执行任务=====\n")
+        print("=====开始执行【本地推送远程】任务=====\n")
         CELL_READ_CONST = read_simulator_cell(EXCEL_FILE)
         print(f"读取到模拟器标识：{CELL_READ_CONST}")
         print(f"选定提交前缀：{use_prefix}")
 
+        repo_list = []
         if select_repo_value == 1:
-            GIT_REPOSITORY = REPO_1
+            repo_list = [REPO_1]
             print(f"✅ 选择仓库：005.490_main")
         elif select_repo_value == 2:
-            GIT_REPOSITORY = REPO_2
+            repo_list = [REPO_2]
             print(f"✅ 选择仓库：005.490_main_old")
+        elif select_repo_value == 3:
+            repo_list = [REPO_1, REPO_2]
+            print(f"✅ 选择：一次性处理全部两个仓库(005.490_main + 005.490_main_old)")
         else:
-            raise ValueError(
-                "只能填写1或者2！1代表005.490_main，2代表005.490_main_old")
+            raise ValueError("仅支持选项1、2、3")
 
-        print(f"目标Git仓库路径：{GIT_REPOSITORY}")
-        git_auto_sync(use_prefix, repo_cwd=GIT_REPOSITORY)
+        for idx, repo_path in enumerate(repo_list, 1):
+            print(f"\n----------【第{idx}个仓库】{repo_path} ----------")
+            try:
+                print(f"目标Git仓库路径：{repo_path}")
+                # git_auto_sync内部：本地推送远程、merge冲突取本地版本(-X ours)
+                git_auto_sync(use_prefix, repo_cwd=repo_path)
+                print(f"==== 当前仓库操作完成 ====")
+            except Exception as e:
+                print(f"❌ 当前仓库执行异常：{e}\n⚠️ 将继续处理下一个仓库")
+
+        print("\n=====全部选定仓库处理流程结束=====")
 
     except Exception as e:
         print(f"\n程序异常：{e}")
@@ -142,8 +156,8 @@ def on_button_click(text_area, var_repo, entry_prefix, root, state):
 
 def build_window():
     root = tk.Tk()
-    root.title("Git一键同步工具 Tkinter版")
-    root.geometry("780x620")
+    root.title("Git本地推送远程工具 Tkinter版 V1.0.0")
+    root.geometry("960x640")
 
     app_state = GuiState()
     var_select_repo = tk.IntVar(value=2)  # 默认=2 main_old
@@ -164,15 +178,21 @@ def build_window():
                    text="① 005.490_main仓库",
                    variable=var_select_repo,
                    value=1,
-                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=20, pady=8)
+                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=12, pady=8)
 
     tk.Radiobutton(frame_repo,
                    text="② 005.490_main_old仓库",
                    variable=var_select_repo,
                    value=2,
-                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=20, pady=8)
+                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=12, pady=8)
 
-    btn_run = tk.Button(root, text="🔘执行Git一键同步",
+    tk.Radiobutton(frame_repo,
+                   text="③ 一次性处理全部两个仓库",
+                   variable=var_select_repo,
+                   value=3,
+                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=12, pady=8)
+
+    btn_run = tk.Button(root, text="🔘执行Git本地推送远程",
                         font=("微软雅黑", 11),
                         command=lambda: on_button_click(log_text, var_select_repo, entry_commit, root, app_state))
     btn_run.pack(pady=8)

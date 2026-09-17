@@ -1,4 +1,6 @@
-# V1.2.0 远程覆盖本地｜自动合并｜冲突取远程｜保留本地时间线｜任务完成3秒倒计时关闭窗口
+# V1.3.2 远程覆盖本地｜自动合并｜冲突取远程
+# 保留本地时间线｜任务完成3秒倒计时关闭窗口
+# 批量双仓库
 import subprocess
 import os
 import tkinter as tk
@@ -56,7 +58,7 @@ def git_remote_override_local(repo_cwd: str) -> None:
     subprocess.run(["git", "clean", "-fd"], cwd=repo_cwd)
 
     print("\n✅本地文件已同步，本地全部提交时间线完整保留，冲突已自动选用远程版本")
-    print("==== 操作完成 ====")
+    print("==== 当前仓库操作完成 ====\n")
 
 
 class TextRedirector:
@@ -82,24 +84,32 @@ def run_override_task(log_widget, select_repo_value, root):
     sys.stdout = TextRedirector(log_widget)
     try:
         print("=====开始执行【远程覆盖本地｜自动合并｜冲突取远程】任务=====\n")
+        repo_list = []
         if select_repo_value == 1:
-            GIT_REPOSITORY = REPO_1
-            print(f"✅ SELECT_REPO = {select_repo_value} 选择仓库：005.490_main")
+            repo_list = [REPO_1]
+            print(f"✅ 选择仓库：005.490_main")
         elif select_repo_value == 2:
-            GIT_REPOSITORY = REPO_2
-            print(f"✅ SELECT_REPO = {select_repo_value} 选择仓库：005.490_main_old")
+            repo_list = [REPO_2]
+            print(f"✅ 选择仓库：005.490_main_old")
+        elif select_repo_value == 3:
+            repo_list = [REPO_1, REPO_2]
+            print(f"✅ 选择：一次性处理全部两个仓库(005.490_main + 005.490_main_old)")
         else:
-            raise ValueError(
-                "SELECT_REPO只能填写1或者2！1代表005.490_main，2代表005.490_main_old")
+            raise ValueError("仅支持选项1、2、3")
 
-        print(f"目标Git仓库路径：{GIT_REPOSITORY}")
-        git_remote_override_local(repo_cwd=GIT_REPOSITORY)
+        for idx, repo_path in enumerate(repo_list, 1):
+            print(f"----------【第{idx}个仓库】{repo_path} ----------")
+            try:
+                git_remote_override_local(repo_cwd=repo_path)
+            except Exception as e:
+                print(f"❌ 当前仓库执行异常：{e}\n⚠️ 将继续处理下一个仓库\n")
+
+        print("\n=====全部选定仓库处理流程结束=====")
 
     except Exception as e:
-        print(f"\n❌程序异常：{e}")
+        print(f"\n❌程序顶层异常：{e}")
     finally:
         sys.stdout = old_stdout
-        # 【重点】子线程不能直接操作UI！用root.after把倒计时函数投递到主线程事件队列执行
         root.after(0, lambda: countdown_close(log_widget, root, remain=3))
 
 
@@ -114,29 +124,35 @@ def on_button_click(text_area, var_repo, root):
 
 def build_window():
     root = tk.Tk()
-    root.title("Git远程覆盖本地工具 Tkinter版 V1.2.0")
-    root.geometry("780x560")
+    root.title("Git远程覆盖本地工具 Tkinter版 V1.3.2")
+    root.geometry("920x580")
 
     var_select_repo = tk.IntVar(value=2)  # 默认选中2(main_old)
 
     # 仓库选择分组框
     frame_repo = tk.LabelFrame(
-        root, text="选择Git目标仓库（赋值SELECT_REPO）", font=("微软雅黑", 10))
+        root, text="选择Git目标仓库", font=("微软雅黑", 10))
     frame_repo.pack(padx=10, pady=6, fill=tk.X)
 
     tk.Radiobutton(frame_repo,
-                   text="① SELECT_REPO=1 → 005.490_main仓库",
+                   text="① 005.490_main仓库",
                    variable=var_select_repo,
                    value=1,
-                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=20, pady=8)
+                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=12, pady=8)
 
     tk.Radiobutton(frame_repo,
-                   text="② SELECT_REPO=2 → 005.490_main_old仓库",
+                   text="② 005.490_main_old仓库",
                    variable=var_select_repo,
                    value=2,
-                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=20, pady=8)
+                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=12, pady=8)
 
-    # 执行按钮：把root实例传入回调函数
+    tk.Radiobutton(frame_repo,
+                   text="③ 一次性处理全部两个仓库",
+                   variable=var_select_repo,
+                   value=3,
+                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=12, pady=8)
+
+    # 执行按钮
     btn_run = tk.Button(root, text="🔘执行远程仓库覆盖本地(自动合并，冲突取远程)",
                         font=("微软雅黑", 11),
                         command=lambda: on_button_click(log_text, var_select_repo, root))
@@ -155,13 +171,16 @@ if __name__ == "__main__":
     build_window()
 
     # =========命令行脚本模式，取消注释即可直接运行不启动GUI=========
-    # SELECT_REPO = 2
+    # SELECT_REPO = 3
+    # repo_list = []
     # if SELECT_REPO == 1:
-    #     GIT_REPOSITORY = REPO_1
+    #     repo_list = [REPO_1]
     # elif SELECT_REPO == 2:
-    #     GIT_REPOSITORY = REPO_2
+    #     repo_list = [REPO_2]
+    # elif SELECT_REPO ==3:
+    #     repo_list = [REPO_1,REPO_2]
     # else:
-    #     raise ValueError("SELECT_REPO只能填写1或者2！1代表005.490_main，2代表005.490_main_old")
-    # print(f"当前选择仓库编号 SELECT_REPO = {SELECT_REPO}")
-    # print(f"目标Git仓库路径：{GIT_REPOSITORY}")
-    # git_remote_override_local(repo_cwd=GIT_REPOSITORY)
+    #     raise ValueError("仅支持选项1、2、3")
+    # for repo_path in repo_list:
+    #     print(f"\n目标Git仓库路径：{repo_path}")
+    #     git_remote_override_local(repo_cwd=repo_path)
