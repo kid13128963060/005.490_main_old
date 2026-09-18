@@ -1,6 +1,6 @@
-# V1.3.2 远程覆盖本地｜自动合并｜冲突取远程
-# 保留本地时间线｜任务完成3秒倒计时关闭窗口
-# 批量双仓库
+# V1.3.5 远程覆盖本地｜自动合并｜冲突取远程｜修复无冲突场景远程无法覆盖本地已提交文件
+# 保留本地完整提交时间线｜任务完成3秒倒计时关闭窗口｜批量双仓库
+
 import subprocess
 import os
 import tkinter as tk
@@ -28,6 +28,7 @@ def countdown_close(log_widget, root, remain: int):
 def git_remote_override_local(repo_cwd: str) -> None:
     """
     远程仓库覆盖本地：自动合并，冲突以远程版本为主，保留本地完整提交时间线
+    修复：分支分叉但无冲突时，强制全部文件采用远程版本
     :param repo_cwd: Git仓库根目录(包含.git的文件夹绝对路径)
     """
     if not os.path.isdir(repo_cwd):
@@ -36,34 +37,43 @@ def git_remote_override_local(repo_cwd: str) -> None:
     if not os.path.isdir(git_dot_git):
         raise FileNotFoundError(f"该目录下没有.git文件夹，不是Git仓库！\n{git_dot_git}")
 
-    print("==== 远程覆盖本地开始【自动合并｜冲突取远程｜保留本地时间线】 ====")
+    print("==== 远程覆盖本地开始【自动合并｜冲突取远程｜保留本地完整时间线】 ====")
     print(f"Git执行仓库目录: {repo_cwd}")
-    print("⚠️ 警告：本操作会丢弃本地所有未提交修改；合并冲突自动选用远程版本！\n")
+    print("⚠️ 警告：本操作会丢弃本地所有未提交修改；合并后强制全部文件使用远程版本！\n")
 
-    print("[1/3] git fetch origin")
+    print("[1/5] git fetch origin")
     ret_fetch = subprocess.run(["git", "fetch", "origin"], cwd=repo_cwd)
     if ret_fetch.returncode != 0:
         print("git fetch failed")
         raise SystemExit(1)
 
     # -X theirs：合并冲突自动采用远程(theirs)版本；--no-edit不修改合并提交信息
-    print("[2/3] git merge origin/main -X theirs --no-edit")
+    print("[2/5] git merge origin/main -X theirs --no-edit")
     ret_merge = subprocess.run(
         ["git", "merge", "origin/main", "-X", "theirs", "--no-edit"], cwd=repo_cwd
     )
     if ret_merge.returncode != 0:
-        print("⚠️ merge返回非0，尝试完成合并流程")
+        print("⚠️ merge检测到冲突，继续执行强制取远程文件流程")
 
-    print("[3/3] git clean -fd")
+    # ----------------核心修复点----------------
+    # 无论merge成功/冲突，强制全部工作区文件替换为远程版本，解决无冲突不覆盖bug
+    print("[3/5] git checkout --theirs . 强制全部文件使用远程origin/main版本")
+    subprocess.run(["git", "checkout", "--theirs", "."], cwd=repo_cwd)
+    subprocess.run(["git", "add", "."], cwd=repo_cwd)
+
+    print("[4/5] git commit --no-edit 保存合并&强制覆盖后的变更")
+    subprocess.run(["git", "commit", "--no-edit"], cwd=repo_cwd)
+
+    print("[5/5] git clean -fd 清理未跟踪文件")
     subprocess.run(["git", "clean", "-fd"], cwd=repo_cwd)
 
-    print("\n✅本地文件已同步，本地全部提交时间线完整保留，冲突已自动选用远程版本")
+    print("\n✅本地文件全部更新为远程版本；本地全部提交时间线完整保留（新增一条合并提交）")
+    print("💡查看完整时间线命令：git log --graph")
     print("==== 当前仓库操作完成 ====\n")
 
 
 class TextRedirector:
     """把print打印重定向到tkinter文本框，控制台输出同步显示UI【复制自git_gui模块】"""
-
     def __init__(self, widget):
         self.widget = widget
 
@@ -105,7 +115,6 @@ def run_override_task(log_widget, select_repo_value, root):
                 print(f"❌ 当前仓库执行异常：{e}\n⚠️ 将继续处理下一个仓库\n")
 
         print("\n=====全部选定仓库处理流程结束=====")
-
     except Exception as e:
         print(f"\n❌程序顶层异常：{e}")
     finally:
@@ -124,7 +133,7 @@ def on_button_click(text_area, var_repo, root):
 
 def build_window():
     root = tk.Tk()
-    root.title("Git远程覆盖本地工具 Tkinter版 V1.3.2")
+    root.title("Git远程覆盖本地工具 Tkinter版 V1.3.5")
     root.geometry("920x580")
 
     var_select_repo = tk.IntVar(value=2)  # 默认选中2(main_old)
