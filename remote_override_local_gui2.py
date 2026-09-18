@@ -1,12 +1,12 @@
 # V1.8.0 远程覆盖本地｜自动合并｜merge冲突取本地(-X ours)
 # 保留本地时间线｜网络检测｜3秒倒计时，输入n回车取消关闭
 # 批量双仓库｜任务锁防重复执行
-import socket
-import threading
 import subprocess
 import os
 import tkinter as tk
-tkinter import scrolledtext
+from tkinter import scrolledtext
+import threading
+import socket
 
 # --------------------------网络检测函数 socket原生--------------------------
 
