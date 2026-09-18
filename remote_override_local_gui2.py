@@ -1,6 +1,6 @@
-# V1.8.0 远程覆盖本地｜自动合并｜merge冲突取本地(-X ours)
-# 保留本地时间线｜网络检测｜3秒倒计时，输入n回车取消关闭
-# 批量双仓库｜任务锁防重复执行
+# V1.9.0 Git远程覆盖本地GUI工具｜merge冲突取远程｜保留本地时间线｜网络检测｜3秒倒计时n取消关闭｜批量双仓库｜任务锁防重复执行
+# 变更记录：V1.8.0(冲突取本地) → V1.9.0 修改merge策略 -X theirs，冲突优先采用远程版本
+
 import subprocess
 import os
 import tkinter as tk
@@ -8,9 +8,8 @@ from tkinter import scrolledtext
 import threading
 import socket
 
+
 # --------------------------网络检测函数 socket原生--------------------------
-
-
 def check_network(timeout=5):
     """检测外网连通，True联网，False断网"""
     try:
@@ -31,7 +30,6 @@ REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资�
 
 class TextRedirector:
     """print重定向写入日志框，**不再禁用控件**，保留用户输入权限"""
-
     def __init__(self, widget):
         self.widget = widget
 
@@ -45,7 +43,6 @@ class TextRedirector:
 
 class GuiState:
     """全局状态：控制倒计时是否取消、任务是否正在运行"""
-
     def __init__(self):
         self.cancel_close = False
         self.task_running = False
@@ -54,7 +51,6 @@ class GuiState:
 def count_down_close(root, log_widget, state: GuiState):
     """3秒倒计时关闭，无弹窗；输入n回车取消关闭"""
     count = 3
-    # 修复原模板bug：文案与实际倒计时统一为3秒
     log_widget.insert(tk.END, "\n====任务执行完毕====\n3秒后自动关闭窗口，在下方输入 n 按回车 保持窗口\n")
     log_widget.see(tk.END)
 
@@ -86,7 +82,7 @@ def on_log_enter(event, state: GuiState, log_widget):
 
 def git_remote_override_local(repo_cwd: str) -> None:
     """
-    远程仓库变更合并到本地，冲突优先取本地版本(-X ours)，完整保留本地提交时间线
+    远程仓库变更合并到本地，冲突优先取远程版本(-X theirs)，完整保留本地提交时间线
     :param repo_cwd: Git仓库根目录(包含.git的文件夹绝对路径)
     """
     if not os.path.isdir(repo_cwd):
@@ -95,7 +91,7 @@ def git_remote_override_local(repo_cwd: str) -> None:
     if not os.path.isdir(git_dot_git):
         raise FileNotFoundError(f"该目录下没有.git文件夹，不是Git仓库！\n{git_dot_git}")
 
-    print("==== 远程覆盖本地开始【自动合并｜冲突优先取本地｜保留本地时间线】 ====")
+    print("==== 远程覆盖本地开始【自动合并｜冲突优先取远程｜保留本地时间线】 ====")
     print(f"Git执行仓库目录: {repo_cwd}")
     print("⚠️ 警告：建议先提交本地未提交修改\n")
 
@@ -105,10 +101,10 @@ def git_remote_override_local(repo_cwd: str) -> None:
         print("git fetch failed")
         raise SystemExit(1)
 
-    # 文档要求：merge策略冲突取本地 → 使用 -X ours
-    print("[2/3] git merge origin/main -X ours --no-edit")
+    # V1.9.0 修改：merge策略冲突取远程 → 使用 -X theirs
+    print("[2/3] git merge origin/main -X theirs --no-edit")
     ret_merge = subprocess.run(
-        ["git", "merge", "origin/main", "-X", "ours", "--no-edit"], cwd=repo_cwd
+        ["git", "merge", "origin/main", "-X", "theirs", "--no-edit"], cwd=repo_cwd
     )
     if ret_merge.returncode != 0:
         print("⚠️ merge返回非0，尝试完成合并流程")
@@ -116,7 +112,7 @@ def git_remote_override_local(repo_cwd: str) -> None:
     print("[3/3] git clean -fd")
     subprocess.run(["git", "clean", "-fd"], cwd=repo_cwd)
 
-    print("\n✅操作完成，本地全部提交时间线完整保留，冲突优先采用本地版本")
+    print("\n✅操作完成，本地全部提交时间线完整保留，冲突优先采用远程版本")
     print("==== 当前仓库操作完成 ====\n")
 
 
@@ -178,7 +174,7 @@ def on_button_click(text_area, var_repo, root, state):
 
 def build_window():
     root = tk.Tk()
-    root.title("Git远程覆盖本地工具 Tkinter版 V1.8.0")
+    root.title("Git远程覆盖本地工具 Tkinter版 V1.9.0")
     root.geometry("940x580")
 
     app_state = GuiState()
