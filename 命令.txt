@@ -1,11 +1,11 @@
-命令8
+6
 任务名
 主任务_1.1.1.09010
 old.主任务_1.1.1.09008
 git_auto_sync0_1.1.1.09001
 
 Disable-NetAdapter -Name "WLAN 2" -Confirm:$false
-Enable-NetAdapter -Name "WLAN 2" -Confirm:$false
+Disable-NetAdapter -Name "WLAN 2" -Confirm:$false
 
 重载 VSCode 窗口
 快捷键 Ctrl+Shift+P → 输入 
