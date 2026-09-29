@@ -1,4 +1,4 @@
-# 版本:V1.0.14
+# 版本:V1.1.14
 # 功能:调用路径1ps1脚本、path2_py、path3_py、path4_py；先执行ps1，
 # 延时后依次执行py脚本；捕获path2_py读取Excel得到模拟器标识字符串，
 # 根据不同模拟器标识执行不同等待时长，最后执行wifi开关脚本
@@ -10,6 +10,8 @@
 
 import os
 import subprocess
+from module.find_target_script import find_target_script
+from module.run_python_script import run_python_script
 
 # ==========顶部配置区（放在一级根目录app_root上方）==========
 # module脚本名字典，集中维护module目录全部脚本文件名，key从0顺序递增
@@ -50,9 +52,7 @@ for k in sorted_keys:
 def run_python_script(script_path, capture_output_flag=False):
     # capture_output_flag=True时捕获标准输出，用于获取脚本输出字符串
     if capture_output_flag:
-        result = subprocess.run(
-            ["python", script_path], capture_output=True, text=True, check=False
-        )
+        result = subprocess.run(["python", script_path], capture_output=True, text=True, check=False)
     else:
         # 不捕获输出时，依然返回CompletedProcess，不再返回None
         result = subprocess.run(["python", script_path], check=False)
