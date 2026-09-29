@@ -2,23 +2,31 @@
 #       根据网络状态控制wifi开关；工脑模拟器启动Ditto，最后执行ps1配置脚本；
 # 变更记录：V6.1.1 修改BASE_TYCLOUD_OLD路径
 # 变更记录：V6.2 基础版本
-# 变更记录：V6.3 main函数末尾增加调用run_ps1_script函数，执行ps1脚本并打印输出与转换后返回码
+# 版本: V6.4 功能:设备识别工作流；读取excel获取模拟器标识，执行设备识别、网络检测
+# 根据网络状态控制wifi开关；工脑模拟器启动Ditto，最后执行ps1配置脚本
 # 变更记录：V6.4 删除本文件内部旧版run_python_script、run_ps1_script、run_script；
 #       导入外部run_python_script函数；全部脚本改用短名调用；ps1脚本使用新函数执行；
-#       增加脚本查找失败None防护；修复Pylance对stdout类型推断报错，所有stdout增加str()转换
+# 导入外部run_python_script函数；全部脚本改用短名调用；ps1脚本使用新函数执行；
+# 增加脚本查找失败None防护
+# 修复Pylance对stdout类型推断报错，所有stdout增加str()转换
 import os
 import subprocess
 import sys
 import time
 
+# 导入外部run_python_script（文件2 run_python_script.py）
+from Combination_Module.run_python_script import run_python_script
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
 # 一级根目录：App总根目录
-app_root = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main\App"
-
-# 导入外部run_python_script（文件2 run_python_script.py）
-from Combination_Module.run_python_script import run_python_script
+# fmt: off
+app_root = (
+    r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件"
+    r"\005_400_电脑编程_1\005.490_main\App"
+)
+# fmt: on
 
 
 def main():
