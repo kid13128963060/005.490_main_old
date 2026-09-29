@@ -9,9 +9,12 @@
 # Path下标数字与字典key顺序一一对应；后续新增字典条目，路径自动扩展，无需手动新增path变量
 
 import os
-import subprocess
-from module.find_target_script import find_target_script
-from module.run_python_script import run_python_script
+
+from Combination_Module.run_python_script import run_python_script
+
+# 方式A：不捕获输出，脚本print直接打印控制台
+res1 = run_python_script("open_plus_close_wifi", capture_output_flag=False)
+
 
 # ==========顶部配置区（放在一级根目录app_root上方）==========
 # module脚本名字典，集中维护module目录全部脚本文件名，key从0顺序递增
@@ -49,11 +52,3 @@ for k in sorted_keys:
 
 
 # 封装执行python脚本的函数
-def run_python_script(script_path, capture_output_flag=False):
-    # capture_output_flag=True时捕获标准输出，用于获取脚本输出字符串
-    if capture_output_flag:
-        result = subprocess.run(["python", script_path], capture_output=True, text=True, check=False)
-    else:
-        # 不捕获输出时，依然返回CompletedProcess，不再返回None
-        result = subprocess.run(["python", script_path], check=False)
-    return result

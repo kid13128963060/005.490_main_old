@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # version: V1.5
 # 功能: 根据脚本扩展名自动选择执行方式，支持py脚本与ps1脚本；
 #       capture_output_flag标记控制是否捕获标准输出；
@@ -49,7 +48,9 @@ if __name__ == "__main__":
         target_script_name = input_name
 
     # 调用find_target_script搜索脚本，返回值赋值给script_path
-    script_path = find_target_script(target_script_name=target_script_name, recursive=True)
+    script_path = find_target_script(
+        target_script_name=target_script_name, recursive=True
+    )
     print(f"从文件2获取得到脚本路径：{script_path}")
 
     if script_path is not None:
