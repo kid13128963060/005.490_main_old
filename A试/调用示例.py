@@ -1,6 +1,6 @@
 from Combination_Module.run_python_script import run_python_script
 
-# 传入脚本短名（不带 .py / .ps1 后缀）
+# 传入脚本短名（不带 .py / .ps1 后缀）脚本print直接打印控制台脚本print直接打印控制台脚本print直接打印控制台脚本print直接打印控制台脚本print直接打印控制台脚本print直接打印控制台
 
 # 方式A：不捕获输出，脚本print直接打印控制台
 res1 = run_python_script("本地覆盖云端配置", capture_output_flag=False)
