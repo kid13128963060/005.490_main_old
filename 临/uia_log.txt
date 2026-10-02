@@ -1,0 +1,5 @@
+2026-10-02 12:39:53,657 - INFO - ============脚本开始执行============
+2026-10-02 12:39:53,658 - INFO - 准备启动Ditto程序，路径：C:\Program Files\Ditto\Ditto.exe
+2026-10-02 12:39:53,705 - ERROR - ❌启动Ditto程序发生异常：find_elements() got an unexpected keyword argument 'timeout'
+2026-10-02 12:39:53,706 - ERROR - 业务流程执行失败
+2026-10-02 12:39:53,706 - INFO - ============脚本执行完毕============

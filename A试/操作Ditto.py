@@ -1,48 +1,129 @@
-# 版本：V3.0 Ditto自动化脚本；修复find_elements() got an unexpected keyword argument 'timeout'；
-# 使用pywinauto UIA后端；禁止pyautogui图像识别；logging输出uia_log.txt；捕获Ctrl+C中断；显式等待10秒；全部中文注释
-# 修复清单：
-# 1.移除app.window(class_name=None)，该传参是报错图2的真正根源；
-# 2.完全复用参考代码2：find_child_by_name、get_all_descendant_text、click_input()点击方式；
-# 3.解决观察1：彻底移除记事本/Word输入文本逻辑，脚本仅操作DittoUI；
-# 4.解决Ditto启动后无法激活前台，执行restore+set_focus；
-# 5.不导入LookupError，运行时通过异常类名字符串捕获，消除导入符号报错；
-# 6.日志采用脚本所在目录绝对路径，不受运行工作目录影响
+# Ditto V7.2 Ok 基于文档V3.0修复：QPasteClass弹窗不支持WindowPattern，移除restore/set_focus
+# 依赖: pip install psutil pywin32 pywinauto
 import logging
 import sys
 import os
 import time
+import traceback
+import psutil
+import win32api
+import win32con
+import win32gui
+import pyautogui
+
 from typing import Optional, cast
 from pywinauto import Application
 from pywinauto.controls.uiawrapper import UIAWrapper
 from pywinauto.findwindows import ElementNotFoundError
 
-# --------------------------全局常量配置--------------------------
-WAIT_TIMEOUT: int = 10  # 元素、窗口显式等待超时时间，单位秒
+# ===================== 用户配置区 =====================
+SELECT_KEY = "OEM3_BACKQUOTE"  # 虚拟按键 0xC0 `
+AUTO_CLICK_THREE_DOTS = True
+POPUP_WAIT_SEC = 1.8
 DITTO_EXE_PATH: str = r"C:\Program Files\Ditto\Ditto.exe"
-# 获取当前脚本所在文件夹，日志uia_log.txt固定生成在脚本同级目录，不受cmd/vscode运行目录影响
+DITTO_PROCESS_NAME = "Ditto.exe"
+WAIT_TIMEOUT: int = 10
+
+# 虚拟键码对照表【26字母 + 主键盘符号】
+KEY_MAP = {
+    "A": 0x41,
+    "B": 0x42,
+    "C": 0x43,
+    "D": 0x44,
+    "E": 0x45,
+    "F": 0x46,
+    "G": 0x47,
+    "H": 0x48,
+    "I": 0x49,
+    "J": 0x4A,
+    "K": 0x4B,
+    "L": 0x4C,
+    "M": 0x4D,
+    "N": 0x4E,
+    "O": 0x4F,
+    "P": 0x50,
+    "Q": 0x51,
+    "R": 0x52,
+    "S": 0x53,
+    "T": 0x54,
+    "U": 0x55,
+    "V": 0x56,
+    "W": 0x57,
+    "X": 0x58,
+    "Y": 0x59,
+    "Z": 0x5A,
+    "OEM3_BACKQUOTE": 0xC0,  # ` ~
+    "D1": 0x31,
+    "D2": 0x32,
+    "D3": 0x33,
+    "D4": 0x34,
+    "D5": 0x35,
+    "D6": 0x36,
+    "D7": 0x37,
+    "D8": 0x38,
+    "D9": 0x39,
+    "D0": 0x30,
+    "OEM_MINUS": 0xBD,
+    "OEM_PLUS": 0xBB,
+    "OEM_4": 0xDB,
+    "OEM_5": 0xDC,
+    "OEM_6": 0xDD,
+    "OEM_1": 0xBA,
+    "OEM_7": 0xDE,
+    "OEM_COMMA": 0xBC,
+    "OEM_PERIOD": 0xBE,
+    "OEM_2": 0xBF,
+}
+
 SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE_NAME: str = os.path.join(SCRIPT_FOLDER, "uia_log.txt")
-
-# --------------------------日志初始化配置--------------------------
 logging.basicConfig(
-    filename=LOG_FILE_NAME,
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    encoding="utf-8"
+    filename=LOG_FILE_NAME, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", encoding="utf-8"
 )
 logger = logging.getLogger(__name__)
 
 
-def find_child_by_name(
-    root: UIAWrapper, target_name: str, depth: int = 8
-) -> Optional[UIAWrapper]:
-    """
-    UIA递归遍历控件树，按控件Name文本查找子控件，取自参考代码2实现
-    :param root: 根窗口控件对象
-    :param target_name: 需要查找的控件显示文本
-    :param depth: 递归遍历最大深度，防止无限遍历
-    :return: 找到返回控件对象，找不到返回None
-    """
+def get_ditto_pid():
+    """获取Ditto PID，未运行返回None"""
+    for proc in psutil.process_iter(["pid", "name"]):
+        try:
+            if proc.info["name"] and proc.info["name"].lower() == DITTO_PROCESS_NAME.lower():
+                return proc.info["pid"]
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    return None
+
+
+def start_ditto_if_not_exist():
+    """Ditto不存在则启动，返回PID"""
+    pid = get_ditto_pid()
+    if pid is not None:
+        logger.info("✅检测到Ditto进程已经在运行，跳过启动")
+        print("✅检测到Ditto进程已经在运行，跳过启动")
+        return pid
+    logger.info("🔍未检测Ditto，准备启动Ditto")
+    print("🔍未检测Ditto，准备启动Ditto")
+    os.startfile(DITTO_EXE_PATH)
+    time.sleep(3.0)
+    pid = get_ditto_pid()
+    logger.info(f"✅Ditto已启动完成 PID={pid}")
+    print(f"✅Ditto已启动完成 PID={pid}")
+    return pid
+
+
+def send_virtual_key(vk_code):
+    """发送虚拟键码，无Shift"""
+    logger.info(f"📤发送虚拟键码: 0x{vk_code:02X}")
+    print(f"📤发送虚拟键码: 0x{vk_code:02X}")
+    win32api.keybd_event(vk_code, 0, 0, 0)
+    time.sleep(0.1)
+    win32api.keybd_event(vk_code, 0, win32con.KEYEVENTF_KEYUP, 0)
+    logger.info("✅按键发送完毕")
+    print("✅按键发送完毕")
+
+
+def find_child_by_name(root: UIAWrapper, target_name: str, depth: int = 8) -> Optional[UIAWrapper]:
+    """UIA递归遍历控件树，按控件Name文本查找子控件（文档V3.0原版）"""
     if depth <= 0:
         return None
     try:
@@ -61,12 +142,7 @@ def find_child_by_name(
 
 
 def get_all_descendant_text(root: UIAWrapper) -> str:
-    """
-    【取自参考代码2】使用descendants获取全部后代控件文本，穿透所有容器面板
-    解决children()、顶层window_text()拿不到内部悬浮菜单面板文本的问题
-    :param root: 遍历根控件
-    :return: 拼接后的全部UI文本字符串
-    """
+    """获取全部后代控件文本（文档V3.0原版）"""
     result_text = ""
     try:
         all_ctrls = root.descendants()
@@ -79,116 +155,97 @@ def get_all_descendant_text(root: UIAWrapper) -> str:
     return result_text
 
 
-def start_ditto_app() -> Optional[UIAWrapper]:
-    """
-    步骤1：启动Ditto.exe；步骤2等待程序窗口加载完成；步骤3恢复窗口并激活到前台
-    修复关键点：删除 app.window(class_name=None)，class_name=None会触发内部find_elements参数异常（报错图2）
-    :return: 返回Ditto主窗口UIAWrapper对象；失败返回None
-    """
+def click_ditto_option_menu(ditto_pid):
+    """连接Ditto悬浮弹窗QPasteClass，pyautogui屏幕坐标点击三点⋮"""
+    print("⏳等待Ditto悬浮窗口渲染...")
+    time.sleep(POPUP_WAIT_SEC)
     try:
-        logger.info(f"准备启动Ditto程序，路径：{DITTO_EXE_PATH}")
-        app = Application(backend="uia").start(DITTO_EXE_PATH)
-        # 【关键修复】删除 class_name=None 传参，直接使用timeout等待窗口
-        main_win = app.window(timeout=WAIT_TIMEOUT)
-        main_win = cast(UIAWrapper, main_win)
-        # 解决观察：Ditto启动成功但是无法激活到前台，先restore恢复窗口再set_focus置顶
-        main_win.restore()
-        main_win.set_focus()
+        app = Application(backend="uia").connect(process=ditto_pid, timeout=8)
+        all_wins = app.windows()
+        ditto_win = None
+        print(f"🔍共找到该进程 {len(all_wins)} 个窗口，逐个打印信息：")
+        for idx, w in enumerate(all_wins):
+            wrap = cast(UIAWrapper, w)
+            win_text = wrap.window_text()
+            cls_name = wrap.class_name()
+            print(f"  窗口{idx}: text='{win_text}' | class_name='{cls_name}'")
+            if cls_name == "QPasteClass":
+                ditto_win = wrap
+                break
+        if ditto_win is None:
+            print("❌遍历窗口失败，没有找到Ditto悬浮Popup窗口(QPasteClass)")
+            logger.error("❌遍历窗口失败，没有找到Ditto悬浮Popup窗口(QPasteClass)")
+            return False
+
+        # QPasteClass禁止restore/set_focus
+        time.sleep(0.4)
+
+        # 获取悬浮窗矩形区域
+        rect = ditto_win.rectangle()
+        print(f"\n✅悬浮窗坐标：{rect}")
+        # 三点按钮在窗口右下角，向左偏移22像素，向上偏移12像素（相对窗口右下角）
+        click_x = rect.right - 37
+        click_y = rect.bottom - 23
+        print(f"👉准备点击三点按钮，屏幕坐标：X={click_x}, Y={click_y}")
+
+        # 改用pyautogui模拟鼠标点击，绕开UIA click_input失效问题
+        pyautogui.moveTo(click_x, click_y, duration=0.1)
+        pyautogui.click()
+        logger.info("✅pyautogui执行点击三点菜单（相对窗口右下角坐标）")
+        print("✅pyautogui执行点击三点菜单（相对窗口右下角坐标）")
         time.sleep(1.2)
-        logger.info("✅Ditto程序启动成功，窗口已恢复并激活至前台")
-        return main_win
-    except ElementNotFoundError as exc:
-        err_msg = (
-            f"❌等待Ditto窗口超时{WAIT_TIMEOUT}秒，没有找到Ditto窗口，"
-            f"异常信息：{str(exc)}"
-        )
-        logger.error(err_msg)
-        print(err_msg)
-        return None
-    except Exception as exc:
-        err_msg = f"❌启动Ditto程序发生异常：{str(exc)}"
-        logger.error(err_msg)
-        print(err_msg)
-        return None
 
+        menu_text = get_all_descendant_text(ditto_win)
+        logger.info(f"弹窗菜单文本片段:{menu_text[:200]}")
+        return True
 
-def execute_delete_unused_clip_item() -> bool:
-    """
-    业务主逻辑：Ditto窗口找到三点【选项...】按钮，点击弹出悬浮菜单，
-    在菜单中点击【删除所有未使用的剪贴项】，完全参考代码2控件遍历与click_input点击方式
-    解决观察1：脚本完全移除记事本/Word输入文本逻辑，仅操作Ditto程序UI
-    对应截图情况图2三点按钮，情况图3下拉菜单项
-    :return: True操作执行成功；False执行失败
-    """
-    ditto_main_win = start_ditto_app()
-    if ditto_main_win is None:
-        logger.error("Ditto主窗口获取失败，流程终止")
+    except ElementNotFoundError as e:
+        logger.error(f"❌connect 或者查找窗口找不到Ditto悬浮窗口: {repr(e)}")
+        print(f"❌connect 或者查找窗口找不到Ditto悬浮窗口: {repr(e)}")
         return False
-
-    # 1.查找三点更多选项菜单按钮（情况图3，菜单文本：选项...）
-    logger.info("🔍UIA控件树遍历，查找Ditto三点【选项...】菜单按钮")
-    three_dot_menu_ctrl = find_child_by_name(ditto_main_win, "选项...")
-    if three_dot_menu_ctrl is None:
-        err_msg = "❌未找到三点【选项...】菜单控件，控件不存在"
-        logger.error(err_msg)
-        print(err_msg)
+    except Exception as e:
+        err_detail = traceback.format_exc()
+        logger.error(f"❌点击三点菜单异常:\n{err_detail}")
+        print(f"❌点击三点菜单异常:\n{err_detail}")
         return False
-    # 参考代码2点击方式：UIA原生click_input，禁止坐标/图像模拟鼠标
-    three_dot_menu_ctrl.click_input()
-    logger.info("✅已点击三点【选项...】，等待下拉悬浮菜单面板渲染")
-    time.sleep(1.5)
-
-    # 使用descendants读取全部后代文本校验悬浮菜单是否弹出
-    menu_full_text = get_all_descendant_text(ditto_main_win)
-    if "删除所有未使用的剪贴项" not in menu_full_text:
-        err_msg = "❌点击三点后，未检测到下拉菜单内容，菜单面板弹出失败"
-        logger.error(err_msg)
-        print(err_msg)
-        return False
-
-    # 2.在弹出悬浮菜单中定位目标菜单项：删除所有未使用的剪贴项
-    logger.info("🔍遍历弹出菜单控件，查找【删除所有未使用的剪贴项】")
-    delete_menu_item = find_child_by_name(ditto_main_win, "删除所有未使用的剪贴项")
-    if delete_menu_item is None:
-        err_msg = "❌找不到菜单项【删除所有未使用的剪贴项】，控件不存在"
-        logger.error(err_msg)
-        print(err_msg)
-        return False
-    delete_menu_item.click_input()
-    logger.info("✅成功点击【删除所有未使用的剪贴项】，操作完成")
-    time.sleep(0.8)
-    return True
 
 
 def main():
-    """
-    脚本入口主函数，捕获Ctrl+C；
-    解决报错图3、图4：不导入LookupError，通过异常类型名称字符串捕获该异常，消除导入符号报错
-    """
-    print("===== Ditto剪贴板清理自动化脚本 V3.0 =====")
-    print(f"📝日志文件完整路径：{LOG_FILE_NAME}")
+    print("===== Ditto V7.2 虚拟按键+pywinautoUIA点击三点菜单 =====")
     logger.info("============脚本开始执行============")
     try:
-        run_result = execute_delete_unused_clip_item()
-        if run_result:
-            logger.info("业务流程全部执行成功")
-        else:
-            logger.error("业务流程执行失败")
+        if SELECT_KEY not in KEY_MAP:
+            print(f"❌错误：{SELECT_KEY} 不在按键列表中！")
+            logger.error(f"❌错误：{SELECT_KEY} 不在按键列表中！")
+            sys.exit(1)
+        target_vk = KEY_MAP[SELECT_KEY]
+
+        ditto_pid = start_ditto_if_not_exist()
+
+        # 切到桌面，防止按键输入编辑器
+        desktop_hwnd = win32gui.GetDesktopWindow()
+        win32gui.SetForegroundWindow(desktop_hwnd)
+        time.sleep(0.3)
+
+        # 发送虚拟键呼出Ditto悬浮窗(QPasteClass)
+        send_virtual_key(target_vk)
+
+        if AUTO_CLICK_THREE_DOTS:
+            click_ditto_option_menu(ditto_pid)
+
+        logger.info("脚本全部流程执行成功")
+        print("✅全部流程执行成功")
+
     except KeyboardInterrupt:
-        print("\n⚠️检测到Ctrl+C快捷键，脚本安全退出")
-        logger.warning("用户按下Ctrl+C中断脚本运行")
+        print("\n⚠️Ctrl+C中断脚本")
+        logger.warning("用户按下Ctrl+C中断")
         sys.exit(1)
     except Exception as exc:
-        # 不导入LookupError类，靠异常名称捕获，解决「LookupError是未知的导入符号」编译报错
-        if type(exc).__name__ == "LookupError":
-            err_msg = f"❌LookupError 控件查找匹配失败异常:{str(exc)}"
-        else:
-            err_msg = f"❌脚本运行未捕获异常：{str(exc)}"
+        err_msg = f"❌脚本运行未捕获异常：{str(exc)}"
         print(err_msg)
         logger.error(err_msg)
         sys.exit(1)
 
-    print("脚本执行完毕")
     logger.info("============脚本执行完毕============")
 
 
