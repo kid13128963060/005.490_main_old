@@ -84,18 +84,7 @@ def main():
     else:
         print("已启动天翼云盘")
 
-    if CELL_READ_CONST == "工脑模拟器":
-        print("工脑模拟器标识字符串匹配成功")
-        # 启动Ditto程序
-        FILE5_Ditto = r"C:\Program Files\Ditto\Ditto.exe"
-        if os.path.exists(FILE5_Ditto):
-            subprocess.Popen(FILE5_Ditto)
-        else:
-            print(f"警告：Ditto程序不存在 {FILE5_Ditto}")
-    else:
-        print("模拟器标识字符串不匹配")
-
-    print("工脑模拟器跳过执行TyCloud_UIA_SyncStatusCheck 脚本")
+    print("家脑模拟器跳过执行TyCloud_UIA_SyncStatusCheck 脚本")
     if CELL_READ_CONST == "工脑模拟器":
         print("等检天翼云盘同步完成始")
         ret_sync_check = run_python_script("TyCloud_UIA_SyncStatusCheck")
