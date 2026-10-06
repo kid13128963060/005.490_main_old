@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # version: V1.0
 import xlrd
 

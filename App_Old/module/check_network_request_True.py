@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # version: V1.0
 import socket
 
@@ -13,10 +12,10 @@ def check_network_request(timeout=5):
         resp = sock.recv(1024).decode("utf‑8", errors="ignore")
         sock.close()
         return "200 OK" in resp
-    except Exception:
+    except OSError:
         return False
 
 
 if __name__ == "__main__":
     ret = check_network_request(timeout=5)
-    print(f"NET_RET:{ret}")
+    print(ret)

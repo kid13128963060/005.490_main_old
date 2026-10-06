@@ -1,18 +1,22 @@
 # 版本: V6.5OK | 功能:设备识别工作流；读取excel获取模拟器标识，执行设备识别、网络检测，
-#       根据网络状态控制wifi开关；工脑模拟器启动Ditto，最后执行ps1配置脚本；
+#      根据网络状态控制wifi开关；工脑模拟器启动Ditto，最后执行ps1配置脚本；
 # 变更记录：V6.1.1 修改BASE_TYCLOUD_OLD路径
 # 变更记录：V6.2 基础版本
 # 版本: V6.4 功能:设备识别工作流；读取excel获取模拟器标识，执行设备识别、网络检测
 # 根据网络状态控制wifi开关；工脑模拟器启动Ditto，最后执行ps1配置脚本
 # 变更记录：V6.4 删除本文件内部旧版run_python_script、run_ps1_script、run_script；
-#       导入外部run_python_script函数；全部脚本改用短名调用；ps1脚本使用新函数执行；
+#      导入外部run_python_script函数；全部脚本改用短名调用；ps1脚本使用新函数执行；
 # 导入外部run_python_script函数；全部脚本改用短名调用；ps1脚本使用新函数执行；
 # 增加脚本查找失败None防护
 # 修复Pylance对stdout类型推断报错，所有stdout增加str()转换
+# V6.5‑UI：增加成功弹窗 + 异常失败弹窗
+
 import os
 import subprocess
 import sys
 import time
+import tkinter as tk
+from tkinter import messagebox
 
 # 导入外部run_python_script（文件2 run_python_script.py）
 from Combination_Module.run_python_script import run_python_script, run_script_capture, run_script_get_stdout
@@ -27,6 +31,25 @@ app_root = (
     r"\005_400_电脑编程_1\005.490_main\App"
 )
 # fmt: on
+
+
+def show_success_ui():
+    """脚本全部流程正常执行完成，弹出成功提示UI"""
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showinfo(
+        title="工作流执行完成",
+        message="✅ 设备识别工作流全部脚本执行成功！\n流程：设备识别→网络检测→Wifi控制→天翼云盘→ps1配置脚本全部走完。",
+    )
+    root.destroy()
+
+
+def show_fail_ui(error_msg: str):
+    """发生异常/失败，弹出失败提示UI，显示错误详情"""
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showerror(title="工作流执行失败", message=f"❌ 设备识别工作流执行异常！\n错误信息：\n{error_msg}")
+    root.destroy()
 
 
 def main():
@@ -58,7 +81,6 @@ def main():
     print(f"【current_device】= {current_device}")
 
     # 步骤2：调用 check_network_request 网络检测，解析NET_RET标记获取net_ok
-
     out = run_script_get_stdout("check_network_request")
     # out 已经是 "True" / "False" / ""
     net_ok = out == "True"
@@ -84,8 +106,13 @@ def main():
     else:
         print("已启动天翼云盘")
 
-    print("家脑模拟器跳过执行TyCloud_UIA_SyncStatusCheck 脚本")
+    print("工脑模拟器跳过执行TyCloud_UIA_SyncStatusCheck 脚本")
     if CELL_READ_CONST == "工脑模拟器":
+        print("等检天翼云盘同步完成始")
+        ret_sync_check = run_python_script("TyCloud_UIA_SyncStatusCheck")
+        if ret_sync_check is None:
+            print("警告：未找到 TyCloud_UIA_SyncStatusCheck 脚本")
+    elif CELL_READ_CONST == "家脑模拟器":
         print("等检天翼云盘同步完成始")
         ret_sync_check = run_python_script("TyCloud_UIA_SyncStatusCheck")
         if ret_sync_check is None:
@@ -109,4 +136,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+        show_success_ui()
+    except Exception as e:
+        err_text = str(e)
+        print(f"\n!!!捕获到异常：{err_text}")
+        show_fail_ui(err_text)

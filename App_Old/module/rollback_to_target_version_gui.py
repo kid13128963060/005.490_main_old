@@ -12,7 +12,6 @@ import tkinter as tk
 from tkinter import scrolledtext
 import threading
 
-
 # ============仓库选择配置 1=main仓库，2=main_old仓库============
 REPO_1 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main"
 REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
@@ -53,8 +52,7 @@ def run_git_command(cmd: list[str], cwd: str):
 
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
     if result.returncode != 0:
-        raise RuntimeError(
-            f"命令失败:\nstdout:{result.stdout}\nstderr:{result.stderr}")
+        raise RuntimeError(f"命令失败:\nstdout:{result.stdout}\nstderr:{result.stderr}")
     print(result.stdout)
 
 
@@ -69,8 +67,7 @@ def git_reset_force_push(select_repo: int, target_commit_hash: str):
     elif select_repo == 2:
         GIT_REPOSITORY = REPO_2
     else:
-        raise ValueError(
-            "SELECT_REPO只能填写1或者2！1代表005.490_main，2代表005.490_main_old")
+        raise ValueError("SELECT_REPO只能填写1或者2！1代表005.490_main，2代表005.490_main_old")
 
     if not target_commit_hash.strip():
         raise ValueError("TARGET_COMMIT_HASH提交哈希不能为空！请输入git commit完整哈希串")
@@ -81,10 +78,8 @@ def git_reset_force_push(select_repo: int, target_commit_hash: str):
     print("⚠️警告：将会清空本地未提交改动，强制覆盖远程main分支，仅单人仓库使用！\n")
 
     run_git_command(["git", "fetch", "origin"], cwd=GIT_REPOSITORY)
-    run_git_command(["git", "reset", "--hard",
-                     target_commit_hash], cwd=GIT_REPOSITORY)
-    run_git_command(["git", "push", "origin", "main",
-                     "--force"], cwd=GIT_REPOSITORY)
+    run_git_command(["git", "reset", "--hard", target_commit_hash], cwd=GIT_REPOSITORY)
+    run_git_command(["git", "push", "origin", "main", "--force"], cwd=GIT_REPOSITORY)
 
     print("✅ 已回退至 指定历史commit，并强制推送远程main")
 
@@ -92,14 +87,14 @@ def git_reset_force_push(select_repo: int, target_commit_hash: str):
 def run_task_thread(log_widget, repo_radio_val, commit_hash_input, root, state: GuiState):
     """子线程运行git任务，避免UI阻塞；重定向print输出到日志控件"""
     import sys
+
     old_stdout = sys.stdout
     sys.stdout = TextRedirector(log_widget)
     state.task_running = True
     try:
         commit_hash = commit_hash_input.get().strip()
         print("=====开始执行【Git回退指定commit并强制推送】任务=====\n")
-        git_reset_force_push(select_repo=repo_radio_val,
-                             target_commit_hash=commit_hash)
+        git_reset_force_push(select_repo=repo_radio_val, target_commit_hash=commit_hash)
         print("\n====任务执行完毕，即将自动关闭窗口====\n")
 
     except Exception as e:
@@ -116,8 +111,7 @@ def on_execute_btn_click(text_area, var_repo, entry_hash, root, state):
     if state.task_running:
         return
     sel_repo = var_repo.get()
-    t = threading.Thread(target=run_task_thread,
-                         args=(text_area, sel_repo, entry_hash, root, state))
+    t = threading.Thread(target=run_task_thread, args=(text_area, sel_repo, entry_hash, root, state))
     t.daemon = True
     t.start()
 
@@ -131,42 +125,37 @@ def build_gui_window():
     var_select_repo = tk.IntVar(value=2)  # 默认选中2 main_old仓库
 
     # 单选框区域：控制变量1 SELECT_REPO
-    frame_repo = tk.LabelFrame(
-        root, text="选择Git目标仓库(控制变量SELECT_REPO)", font=("微软雅黑", 10))
+    frame_repo = tk.LabelFrame(root, text="选择Git目标仓库(控制变量SELECT_REPO)", font=("微软雅黑", 10))
     frame_repo.pack(padx=10, pady=6, fill=tk.X)
 
-    tk.Radiobutton(frame_repo,
-                   text="① 005.490_main仓库",
-                   variable=var_select_repo,
-                   value=1,
-                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=15, pady=8)
+    tk.Radiobutton(
+        frame_repo, text="① 005.490_main仓库", variable=var_select_repo, value=1, font=("微软雅黑", 10)
+    ).pack(side=tk.LEFT, padx=15, pady=8)
 
-    tk.Radiobutton(frame_repo,
-                   text="② 005.490_main_old仓库",
-                   variable=var_select_repo,
-                   value=2,
-                   font=("微软雅黑", 10)).pack(side=tk.LEFT, padx=15, pady=8)
+    tk.Radiobutton(
+        frame_repo, text="② 005.490_main_old仓库", variable=var_select_repo, value=2, font=("微软雅黑", 10)
+    ).pack(side=tk.LEFT, padx=15, pady=8)
 
     # 输入框区域：控制变量2 TARGET_COMMIT_HASH
-    frame_hash = tk.LabelFrame(
-        root, text="目标Commit哈希(控制变量TARGET_COMMIT_HASH)", font=("微软雅黑", 10))
+    frame_hash = tk.LabelFrame(root, text="目标Commit哈希(控制变量TARGET_COMMIT_HASH)", font=("微软雅黑", 10))
     frame_hash.pack(padx=10, pady=6, fill=tk.X)
 
     entry_commit_hash = tk.Entry(frame_hash, font=("Consolas", 10))
     entry_commit_hash.pack(padx=10, pady=8, fill=tk.X)
-    entry_commit_hash.insert(
-        0, "2c6732b335ac46a24bc2b6af2e194b634ccea925")  # 默认原始hash值
+    entry_commit_hash.insert(0, "2c6732b335ac46a24bc2b6af2e194b634ccea925")  # 默认原始hash值
 
     # 执行按钮
-    btn_run = tk.Button(root, text="🔘执行回退并强制推送远程main",
-                        font=("微软雅黑", 11),
-                        fg="#bb2222",
-                        command=lambda: on_execute_btn_click(log_text, var_select_repo, entry_commit_hash, root, app_state))
+    btn_run = tk.Button(
+        root,
+        text="🔘执行回退并强制推送远程main",
+        font=("微软雅黑", 11),
+        fg="#bb2222",
+        command=lambda: on_execute_btn_click(log_text, var_select_repo, entry_commit_hash, root, app_state),
+    )
     btn_run.pack(pady=8)
 
     # 滚动日志输出框
-    log_text = scrolledtext.ScrolledText(
-        root, wrap=tk.WORD, font=("Consolas", 9))
+    log_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, font=("Consolas", 9))
     log_text.pack(fill=tk.BOTH, expand=True, padx=8, pady=5)
 
     root.mainloop()
