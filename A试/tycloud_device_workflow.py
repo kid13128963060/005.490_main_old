@@ -16,6 +16,7 @@ import subprocess
 import sys
 import time
 import tkinter as tk
+from pathlib import Path
 from tkinter import messagebox
 
 # 导入外部run_python_script（文件2 run_python_script.py）
@@ -96,9 +97,6 @@ def main():
     else:
         print("检测结果：网络正常，跳过执行文件4 open_plus_close_wifi")
 
-    print("\n合并步骤执行完成，延时等待5秒……")
-    time.sleep(5)
-
     print("\n>>>> 等待结束，执行路径1：start_tycloud.py天翼云盘脚本")
     ret_start_ty = run_python_script("start_tycloud")
     if ret_start_ty is None:
@@ -106,7 +104,18 @@ def main():
     else:
         print("已启动天翼云盘")
 
-    print("工脑模拟器跳过执行TyCloud_UIA_SyncStatusCheck 脚本")
+    if CELL_READ_CONST == "家脑模拟器":
+
+        time.sleep(3)
+    elif CELL_READ_CONST == "工脑模拟器":
+        time.sleep(9)  # 工脑模拟器等待9秒，确保wifi开关完成
+
+    print("新建启动云端覆盖本地用")
+    p = Path(r"E:\备份盘\8000_大文件夹\009_备份文件夹_自\同步用\启动云端覆盖本地用.txt")
+    p.parent.mkdir(parents=True, exist_ok=True)  # 建父目录，等价 -Force
+    p.touch(exist_ok=True)  # touch 新建空文件，exist_ok=True 已存在不报错
+
+    print("工脑模拟器执行TyCloud_UIA_SyncStatusCheck 脚本")
     if CELL_READ_CONST == "工脑模拟器":
         print("等检天翼云盘同步完成始")
         ret_sync_check = run_python_script("TyCloud_UIA_SyncStatusCheck")
@@ -118,7 +127,8 @@ def main():
         if ret_sync_check is None:
             print("警告：未找到 TyCloud_UIA_SyncStatusCheck 脚本")
 
-    time.sleep(5)
+    time.sleep(3)
+    p.unlink(missing_ok=True)  # 删除文件missing_ok=True：文件不存在不抛异常，类似 -Force
 
     # V6.4改造：ps1脚本【云端覆盖本地配置】改用外部run_python_script函数调用
     print("\n---------- 开始调用run_python_script执行ps1脚本 ----------")
