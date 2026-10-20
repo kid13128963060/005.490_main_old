@@ -110,7 +110,7 @@ def main():
     elif CELL_READ_CONST == "工脑模拟器":
         time.sleep(9)  # 工脑模拟器等待9秒，确保wifi开关完成
 
-    print("新建启动云端覆盖本地用")
+    print("新建启动云端覆盖本地用文件")
     p = Path(r"E:\备份盘\8000_大文件夹\009_备份文件夹_自\同步用\启动云端覆盖本地用.txt")
     p.parent.mkdir(parents=True, exist_ok=True)  # 建父目录，等价 -Force
     p.touch(exist_ok=True)  # touch 新建空文件，exist_ok=True 已存在不报错
@@ -128,6 +128,7 @@ def main():
             print("警告：未找到 TyCloud_UIA_SyncStatusCheck 脚本")
 
     time.sleep(3)
+    print("删除启动云端覆盖本地用文件")
     p.unlink(missing_ok=True)  # 删除文件missing_ok=True：文件不存在不抛异常，类似 -Force
 
     # V6.4改造：ps1脚本【云端覆盖本地配置】改用外部run_python_script函数调用
