@@ -25,6 +25,7 @@ from Combination_Module.git_auto_sync0 import git_auto_sync
 from Combination_Module.read_excel_const import read_simulator_cell
 
 from Combination_Module.run_python_script import run_python_script
+from Combination_Module.run_python_script import run_python_script, run_script_capture, run_script_get_stdout
 
 # 方式A：不捕获输出，脚本print直接打印控制台
 res1 = run_python_script("open_plus_close_wifi", capture_output_flag=False)
