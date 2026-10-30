@@ -10,60 +10,11 @@
 
 import os
 import sys
-
-# 当前脚本目录：A试
-current_dir = os.path.dirname(os.path.abspath(__file__))
-# 向上一级到 005_400_电脑编程_1
-dir_400 = os.path.dirname(current_dir)
-# 拼接目标App路径
-app_path = os.path.join(dir_400, "005.490_main", "App")
-
-if app_path not in sys.path:
-    sys.path.append(app_path)
+import subprocess
 
 from Combination_Module.git_auto_sync0 import git_auto_sync
 from Combination_Module.read_excel_const import read_simulator_cell
+from Combination_Module.vscode_activate_with_keys import vscode_activate_with_keys
 
-from Combination_Module.run_python_script import run_python_script
-from Combination_Module.run_python_script import run_python_script, run_script_capture, run_script_get_stdout
-
-# 方式A：不捕获输出，脚本print直接打印控制台
-res1 = run_python_script("open_plus_close_wifi", capture_output_flag=False)
-
-
-# ==========顶部配置区（放在一级根目录app_root上方）==========
-# module脚本名字典，集中维护module目录全部脚本文件名，key从0顺序递增
-module_script_dict = {
-    0: "read_excel_once.py",
-    1: "open_plus_close_wifi.py",
-    2: "check_network_request_True.py",
-}
-# =========================================================
-
-# 一级根目录：App总根目录
-app_root = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main\App"
-# 新增二级根路径：module文件夹专用根路径
-module_root = os.path.join(app_root, "module")
-
-# ps1脚本，使用一级app_root拼接
-path1_ps1 = os.path.join(app_root, "云端_本地配置_互传", "本地覆盖云端配置.ps1")
-# start_tycloud脚本，使用一级app_root拼接
-path3_py = os.path.join(app_root, "start_tycloud", "start_tycloud.py")
-
-# --------------------------
-# 根据字典自动生成module脚本完整路径列表，key和列表下标严格一一对应
-# 后续字典增加key，此列表自动变长，不需要手动新增path变量
-module_path_list = []
-sorted_keys = sorted(module_script_dict.keys())
-for k in sorted_keys:
-    full_path = os.path.join(module_root, module_script_dict[k])
-    module_path_list.append(full_path)
-# --------------------------
-
-# 索引映射（和字典key保持一致）
-# module_path_list[0] → read_excel_once.py
-# module_path_list[1] → open_plus_close_wifi.py
-# module_path_list[2] → check_network_request_True.py
-
-
-# 封装执行python脚本的函数
+# 激活VSCode窗口，执行热键保存所有文件
+vscode_activate_with_keys()
