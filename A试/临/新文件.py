@@ -9,6 +9,20 @@
 # Path下标数字与字典key顺序一一对应；后续新增字典条目，路径自动扩展，无需手动新增path变量
 
 import os
+import sys
+
+# 当前脚本目录：A试
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# 向上一级到 005_400_电脑编程_1
+dir_400 = os.path.dirname(current_dir)
+# 拼接目标App路径
+app_path = os.path.join(dir_400, "005.490_main", "App")
+
+if app_path not in sys.path:
+    sys.path.append(app_path)
+
+from Combination_Module.git_auto_sync0 import git_auto_sync
+from Combination_Module.read_excel_const import read_simulator_cell
 
 from Combination_Module.run_python_script import run_python_script
 

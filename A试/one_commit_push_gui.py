@@ -13,8 +13,6 @@ import sys
 import time
 from subprocess import CompletedProcess
 
-import os
-import sys
 
 import os
 import sys
@@ -29,8 +27,8 @@ app_path = os.path.join(dir_400, "005.490_main", "App")
 if app_path not in sys.path:
     sys.path.append(app_path)
 
-from module.git_auto_sync0 import git_auto_sync
-from module.read_excel_const import read_simulator_cell
+from Combination_Module.git_auto_sync0 import git_auto_sync
+from Combination_Module.read_excel_const import read_simulator_cell
 
 # 导入外部run_python_script（文档必导入项，不可删减）
 from module.hotkey_save_all import send_keys
