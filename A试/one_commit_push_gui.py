@@ -7,31 +7,18 @@
 import socket
 import threading
 import tkinter as tk
-from datetime import datetime, timedelta, timezone
-from tkinter import messagebox, scrolledtext
-import sys
 import time
-from subprocess import CompletedProcess
-
-
 import os
 import sys
 
-# 当前脚本目录：A试
-current_dir = os.path.dirname(os.path.abspath(__file__))
-# 向上一级到 005_400_电脑编程_1
-dir_400 = os.path.dirname(current_dir)
-# 拼接目标App路径
-app_path = os.path.join(dir_400, "005.490_main", "App")
-
-if app_path not in sys.path:
-    sys.path.append(app_path)
+from subprocess import CompletedProcess
+from datetime import datetime, timedelta, timezone
+from tkinter import messagebox, scrolledtext
 
 from Combination_Module.git_auto_sync0 import git_auto_sync
 from Combination_Module.read_excel_const import read_simulator_cell
-
 # 导入外部run_python_script（文档必导入项，不可删减）
-from module.hotkey_save_all import send_keys
+from module.hotkey_save_all import hotkey_save_all
 from Combination_Module.run_python_script import run_python_script, run_script_capture, run_script_get_stdout
 
 
@@ -88,7 +75,7 @@ def vscode_activate_with_keys() -> int:
         time.sleep(4)
 
         # ---------------------- 新增：向hotkey_activate传递按键参数 ----------------------
-        send_keys()
+        hotkey_save_all()
 
     except KeyboardInterrupt:
         print("\n脚本被用户Ctrl+C终止")
