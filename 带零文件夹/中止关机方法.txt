@@ -1,3 +1,0 @@
-按下 Win + R，输入
-shutdown /a
-测试
