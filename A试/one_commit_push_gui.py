@@ -299,7 +299,7 @@ def build_window() -> None:
     # 情况图1需求：窗口打开5秒后自动执行任务，保留手动按钮立即执行
     log_text.insert(tk.END, ">>>窗口已启动，将在5秒后自动开始执行任务，也可手动点击按钮立即执行\n")
     log_text.see(tk.END)
-    root.after(5000, lambda: on_button_click(log_text, var_select_repo, entry_commit, var_force_push, root, app_state))
+    root.after(8000, lambda: on_button_click(log_text, var_select_repo, entry_commit, var_force_push, root, app_state))
 
     root.mainloop()
 
