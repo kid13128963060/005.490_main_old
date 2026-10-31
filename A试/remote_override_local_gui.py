@@ -1,9 +1,8 @@
-# V1.11.1 Git远程覆盖本地GUI工具｜merge冲突取远程｜无冲突也强制远程覆盖工作区文件｜保留本地时间线｜网络检测｜3秒倒计时Ctrl+C取消关闭｜批量双仓库｜任务锁防重复执行
+# V1.15.0 Git远程覆盖本地GUI工具｜merge冲突取远程｜无冲突也强制远程覆盖工作区文件｜保留本地时间线｜窗口5s自动执行｜执行完毕倒计时关闭｜Ctrl+C取消关闭｜批量双仓库｜任务锁防重复执行
 # 变更记录：
 # V1.9.0 修改merge策略 -X theirs，冲突优先采用远程版本；问题：仅冲突文件生效，无冲突文件不会被远程覆盖
 # V1.10.0 修复：merge之后执行checkout origin/main -- . 强制全部工作区文件使用远程内容；完整保留本地commit提交时间线
-# V1.11.1 改良：移除n回车取消逻辑，改为控制台Ctrl+C取消关闭；增加必选导入；全量类型注解；Ruff规范；
-#         删除on_log_enter回车绑定；捕获SIGINT；执行完毕打印"脚本执行完毕"；注释行控制90字符内
+# V1.15.0 ok 改良：窗口打开5秒自动执行任务；执行完毕保留倒计时关闭，控制台Ctrl+C可取消关闭；遵循docx全部约束
 from Combination_Module.run_python_script import run_python_script, run_script_capture, run_script_get_stdout
 
 import os
@@ -13,7 +12,7 @@ import subprocess
 import threading
 import tkinter as tk
 from tkinter import scrolledtext
-from typing import Optional
+from typing import List
 
 
 # --------------------------网络检测函数 socket原生--------------------------
@@ -98,7 +97,7 @@ def git_remote_override_local(repo_cwd: str) -> None:
     """
     远程仓库变更合并到本地
     1. merge使用‑X theirs：发生冲突优先取远程版本
-    2. checkout origin/main -- .：全部工作区文件强制使用远程内容（无冲突文件同样覆盖）
+    2. checkout origin/main -- .：全部工作区文件强制使用远程内容，无冲突文件同样覆盖
     ✅完整保留本地所有commit提交时间线，不会删除本地提交
     :param repo_cwd: Git仓库根目录(包含.git的文件夹绝对路径)
     """
@@ -153,7 +152,7 @@ def run_override_task(
         print("✅网络正常\n")
 
         print("=====开始执行【远程覆盖本地】任务=====\n")
-        repo_list: list[str] = []
+        repo_list: List[str] = []
         if select_repo_value == 1:
             repo_list = [REPO_1]
             print("✅ 选择仓库：005.490_main")
@@ -186,7 +185,7 @@ def run_override_task(
 
 
 def on_button_click(text_area: scrolledtext.ScrolledText, var_repo: tk.IntVar, root: tk.Tk, state: GuiState) -> None:
-    """按钮点击回调，启动子线程"""
+    """按钮点击回调，启动子线程；同时支持5秒窗口打开自动触发执行"""
     if state.task_running:
         return
     selected = var_repo.get()
@@ -197,7 +196,7 @@ def on_button_click(text_area: scrolledtext.ScrolledText, var_repo: tk.IntVar, r
 
 def build_window() -> None:
     root = tk.Tk()
-    root.title("Git远程覆盖本地工具 Tkinter版 V1.11.1")
+    root.title("Git远程覆盖本地工具 Tkinter版 V1.15.0")
     root.geometry("940x580")
 
     app_state = GuiState()
@@ -244,6 +243,11 @@ def build_window() -> None:
     log_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, font=("Consolas", 9))
     log_text.pack(fill=tk.BOTH, expand=True, padx=8, pady=5)
 
+    # 情况图1：窗口打开5秒自动执行任务，也支持手动按钮点击执行
+    log_text.insert(tk.END, ">>>窗口已启动，将在5秒后自动开始执行任务，也可手动点击按钮立即执行\n")
+    log_text.see(tk.END)
+    root.after(5000, lambda: on_button_click(log_text, var_select_repo, root, app_state))
+
     root.mainloop()
 
 
@@ -252,7 +256,7 @@ if __name__ == "__main__":
 
     # =========命令行脚本模式，取消注释即可直接运行不启动GUI=========
     # SELECT_REPO = 3
-    # repo_list = []
+    # repo_list: List[str] = []
     # if SELECT_REPO == 1:
     #     repo_list = [REPO_1]
     # elif SELECT_REPO == 2:
