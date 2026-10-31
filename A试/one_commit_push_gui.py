@@ -20,7 +20,7 @@ from subprocess import CompletedProcess
 from tkinter import messagebox, scrolledtext
 from typing import Optional
 
-from Combination_Module.git_auto_sync0 import git_auto_sync
+from Combination_Module.git_auto_sync import git_auto_sync
 from Combination_Module.read_excel_const import read_simulator_cell
 from Combination_Module.vscode_activate_with_keys import vscode_activate_with_keys
 
