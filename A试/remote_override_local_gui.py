@@ -1,19 +1,23 @@
-# V1.10.01 Git远程覆盖本地GUI工具｜merge冲突取远程｜无冲突也强制远程覆盖工作区文件｜保留本地时间线｜网络检测｜3秒倒计时n取消关闭｜批量双仓库｜任务锁防重复执行
+# V1.11.1 Git远程覆盖本地GUI工具｜merge冲突取远程｜无冲突也强制远程覆盖工作区文件｜保留本地时间线｜网络检测｜3秒倒计时Ctrl+C取消关闭｜批量双仓库｜任务锁防重复执行
 # 变更记录：
-# V1.8.0(冲突取本地‑X ours)
 # V1.9.0 修改merge策略 -X theirs，冲突优先采用远程版本；问题：仅冲突文件生效，无冲突文件不会被远程覆盖
 # V1.10.0 修复：merge之后执行checkout origin/main -- . 强制全部工作区文件使用远程内容；完整保留本地commit提交时间线
+# V1.11.1 改良：移除n回车取消逻辑，改为控制台Ctrl+C取消关闭；增加必选导入；全量类型注解；Ruff规范；
+#         删除on_log_enter回车绑定；捕获SIGINT；执行完毕打印"脚本执行完毕"；注释行控制90字符内
+from Combination_Module.run_python_script import run_python_script, run_script_capture, run_script_get_stdout
 
 import os
+import signal
 import socket
 import subprocess
 import threading
 import tkinter as tk
 from tkinter import scrolledtext
+from typing import Optional
 
 
 # --------------------------网络检测函数 socket原生--------------------------
-def check_network(timeout=5):
+def check_network(timeout: int = 5) -> bool:
     """检测外网连通，True联网，False断网"""
     try:
         socket.setdefaulttimeout(timeout)
@@ -32,40 +36,51 @@ REPO_2 = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资�
 
 
 class TextRedirector:
-    """print重定向写入日志框，**不再禁用控件**，保留用户输入权限"""
+    """print重定向写入日志框，不再禁用控件，保留用户输入权限"""
 
-    def __init__(self, widget):
+    def __init__(self, widget: scrolledtext.ScrolledText) -> None:
         self.widget = widget
 
-    def write(self, s):
+    def write(self, s: str) -> None:
         self.widget.insert(tk.END, s)
         self.widget.see(tk.END)
 
-    def flush(self):
+    def flush(self) -> None:
         pass
 
 
 class GuiState:
-    """全局状态：控制倒计时是否取消、任务是否正在运行"""
+    """全局状态：控制倒计时是否取消、任务是否正在运行、是否收到Ctrl+C信号"""
 
-    def __init__(self):
-        self.cancel_close = False
-        self.task_running = False
+    def __init__(self) -> None:
+        self.cancel_close: bool = False
+        self.task_running: bool = False
+        self.received_ctrl_c: bool = False
 
 
-def count_down_close(root, log_widget, state: GuiState):
-    """3秒倒计时关闭，无弹窗；输入n回车取消关闭"""
+def sigint_handler(state: GuiState, root: tk.Tk) -> None:
+    """捕获Ctrl+C(SIGINT)信号，标记取消倒计时关闭；Tkinter用after做线程安全UI调度"""
+    state.received_ctrl_c = True
+    state.cancel_close = True
+    root.after(0, lambda: None)
+
+
+def count_down_close(root: tk.Tk, log_widget: scrolledtext.ScrolledText, state: GuiState) -> None:
+    """
+    3秒倒计时关闭，无弹窗；控制台按下Ctrl+C可取消自动关闭；
+    Tkinter after循环执行；收到Ctrl‑C标记则终止倒计时，保留窗口
+    """
     count = 3
     log_widget.insert(
         tk.END,
-        "\n====任务执行完毕====\n3秒后自动关闭窗口，在下方输入 n 按回车 保持窗口\n",
+        "\n====任务执行完毕====\n3秒后自动关闭窗口，控制台按下 Ctrl+C 可保持窗口\n",
     )
     log_widget.see(tk.END)
 
-    def timer():
+    def timer() -> None:
         nonlocal count
         if state.cancel_close:
-            log_widget.insert(tk.END, ">>>收到指令 n，已取消自动关闭\n")
+            log_widget.insert(tk.END, ">>>收到 Ctrl+C，已取消自动关闭\n")
             log_widget.see(tk.END)
             return
         if count <= 0:
@@ -79,21 +94,11 @@ def count_down_close(root, log_widget, state: GuiState):
     timer()
 
 
-def on_log_enter(event, state: GuiState, log_widget):
-    """回车事件：读取最后一行输入，检测是否为n"""
-    if state.task_running:
-        return
-    last_line = log_widget.get("end-2l linestart", tk.END).strip().lower()
-    if last_line == "n":
-        state.cancel_close = True
-        log_widget.delete("end-2l linestart", tk.END)
-
-
 def git_remote_override_local(repo_cwd: str) -> None:
     """
     远程仓库变更合并到本地
     1. merge使用‑X theirs：发生冲突优先取远程版本
-    2. checkout origin/main -- .：**全部工作区文件强制使用远程内容（无冲突文件同样覆盖）**
+    2. checkout origin/main -- .：全部工作区文件强制使用远程内容（无冲突文件同样覆盖）
     ✅完整保留本地所有commit提交时间线，不会删除本地提交
     :param repo_cwd: Git仓库根目录(包含.git的文件夹绝对路径)
     """
@@ -131,7 +136,9 @@ def git_remote_override_local(repo_cwd: str) -> None:
     print("==== 当前仓库操作完成 ====\n")
 
 
-def run_override_task(log_widget, select_repo_value, root, state: GuiState):
+def run_override_task(
+    log_widget: scrolledtext.ScrolledText, select_repo_value: int, root: tk.Tk, state: GuiState
+) -> None:
     """git业务逻辑，子线程运行"""
     import sys
 
@@ -146,7 +153,7 @@ def run_override_task(log_widget, select_repo_value, root, state: GuiState):
         print("✅网络正常\n")
 
         print("=====开始执行【远程覆盖本地】任务=====\n")
-        repo_list = []
+        repo_list: list[str] = []
         if select_repo_value == 1:
             repo_list = [REPO_1]
             print("✅ 选择仓库：005.490_main")
@@ -174,10 +181,11 @@ def run_override_task(log_widget, select_repo_value, root, state: GuiState):
         sys.stdout = old_stdout
         state.task_running = False
         state.cancel_close = False
+        print("脚本执行完毕")
         root.after(0, lambda: count_down_close(root, log_widget, state))
 
 
-def on_button_click(text_area, var_repo, root, state):
+def on_button_click(text_area: scrolledtext.ScrolledText, var_repo: tk.IntVar, root: tk.Tk, state: GuiState) -> None:
     """按钮点击回调，启动子线程"""
     if state.task_running:
         return
@@ -187,13 +195,16 @@ def on_button_click(text_area, var_repo, root, state):
     t.start()
 
 
-def build_window():
+def build_window() -> None:
     root = tk.Tk()
-    root.title("Git远程覆盖本地工具 Tkinter版 V1.10.0")
+    root.title("Git远程覆盖本地工具 Tkinter版 V1.11.1")
     root.geometry("940x580")
 
     app_state = GuiState()
-    var_select_repo = tk.IntVar(value=3)  # 默认选中2(main_old)
+    # 注册SIGINT Ctrl+C信号处理器
+    signal.signal(signal.SIGINT, lambda sig, frame: sigint_handler(app_state, root))
+
+    var_select_repo = tk.IntVar(value=3)
 
     frame_repo = tk.LabelFrame(root, text="选择Git目标仓库", font=("微软雅黑", 10))
     frame_repo.pack(padx=10, pady=6, fill=tk.X)
@@ -232,7 +243,6 @@ def build_window():
 
     log_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, font=("Consolas", 9))
     log_text.pack(fill=tk.BOTH, expand=True, padx=8, pady=5)
-    log_text.bind("<Return>", lambda e: on_log_enter(e, app_state, log_text))
 
     root.mainloop()
 
@@ -254,3 +264,4 @@ if __name__ == "__main__":
     # for repo_path in repo_list:
     #     print(f"\n目标Git仓库路径：{repo_path}")
     #     git_remote_override_local(repo_cwd=repo_path)
+    # print("脚本执行完毕")
