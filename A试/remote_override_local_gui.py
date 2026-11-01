@@ -1,4 +1,4 @@
-# V2.0.5 Git本地推送远程工具 Tkinter版｜窗口5s自动执行｜输入n回车取消关闭｜Ctrl‑C中途停止｜批量双仓库｜任务锁防重复执行
+# V1.15.0 Git远程覆盖本地GUI工具｜窗口5s自动执行｜输入n回车取消关闭｜Ctrl‑C中途停止｜批量双仓库｜任务锁防重复执行
 # 变更记录：
 # V2.0.3ok 配合修复git_auto_sync_theirs的Windows subprocess编码报错UnicodeEncodeError；
 # 修复顶层全局直接调用tk窗口导致CELL_READ_CONST赋值失效，UI输入框丢失模拟器标识bug；
@@ -160,9 +160,9 @@ def run_git_task(
         print("✅网络正常\n")
 
         if force_push_switch:
-            print("=====开始执行【本地推送远程｜自动合并冲突取本地｜开启强制推送】任务=====\n")
+            print("=====开始执行【远程覆盖本地GUI工具｜自动合并冲突取本地｜开启强制推送】任务=====\n")
         else:
-            print("=====开始执行【本地推送远程｜自动合并冲突取本地｜普通推送】任务=====\n")
+            print("=====开始执行【远程覆盖本地GUI工具｜自动合并冲突取本地｜普通推送】任务=====\n")
 
         print(f"读取到模拟器标识：{CELL_READ_CONST}")
         print(f"选定提交前缀：{use_prefix}")
@@ -225,7 +225,7 @@ def on_button_click(
 
 def build_window() -> None:
     root = tk.Tk()
-    root.title("Git本地推送远程工具 Tkinter版 V2.0.5")
+    root.title("Git远程覆盖本地工具 V2.0.5")
     root.geometry("960x580")
 
     app_state = GuiState()
