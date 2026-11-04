@@ -21,7 +21,7 @@ WAIT_TIMEOUT: int = 10  # 元素、窗口显式等待超时时间，单位秒
 DITTO_EXE_PATH: str = r"C:\Program Files\Ditto\Ditto.exe"
 # 获取当前脚本所在文件夹，日志uia_log.txt固定生成在脚本同级目录，不受cmd/vscode运行目录影响
 SCRIPT_FOLDER = os.path.dirname(os.path.abspath(__file__))
-LOG_FILE_NAME: str = os.path.join(SCRIPT_FOLDER, "uia_log.txt")
+LOG_FILE_NAME: str = os.path.join(SCRIPT_FOLDER, "试uia_log.txt")
 
 # --------------------------日志初始化配置--------------------------
 logging.basicConfig(
