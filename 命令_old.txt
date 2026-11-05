@@ -1,4 +1,5 @@
 44
+winget install OpenJS.NodeJS.LTS
 
 WLAN 2
 Disable-NetAdapter -Name "WLAN" -Confirm:$false
