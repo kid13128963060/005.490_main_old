@@ -1,13 +1,15 @@
 import subprocess
 from datetime import datetime
 
-# 仓库绝对路径，根据实际环境修改
+# ====================== 顶部配置区 ======================
 repo_path = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
+commit_msg_template = "测试commit {now_time}"
+# ========================================================
 
 
 def git_run(cmd_list):
     """执行git命令封装"""
-    proc = subprocess.run(cmd_list, cwd=repo_path, capture_output=True, text=True, encoding="utf‑8")
+    proc = subprocess.run(cmd_list, cwd=repo_path, capture_output=True, text=True, encoding="utf8")
     return proc
 
 
@@ -22,12 +24,14 @@ try:
     if not res_status.stdout.strip():
         print("ℹ️ 没有检测到任何改动，无需提交推送")
     else:
-        commit_msg = f"自动同步 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        now_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        commit_msg = commit_msg_template.format(now_time=now_time)
+
         res_commit = git_run(["git", "commit", "-m", commit_msg])
         if res_commit.returncode != 0:
             raise Exception(f"commit失败：{res_commit.stderr}")
 
-        # 推送：本地main → 远程005.490_main_old
+        # 推送：本地main → 远程main
         res_push = git_run(["git", "push", "origin", "main"])
         if res_push.returncode != 0:
             raise Exception(f"push失败：{res_push.stderr}")
