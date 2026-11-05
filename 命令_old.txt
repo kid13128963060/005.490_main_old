@@ -10,8 +10,8 @@ shutdown /a
 重载 VSCode 窗口
 快捷键 Ctrl+Shift+P → 输入 
 Reload Window
-C:\Users\Administrator\AppData\Local\Programs\Python\Python313\python.exe "E:\备份盘\带零文件夹_同\005_计算机科学、程式、490 main\App\module\open_plus_close_wifi.py"
 
+remote_override_local_gui
 Git
 //同步
 git pull   #拉取远程更新
