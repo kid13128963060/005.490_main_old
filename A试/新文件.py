@@ -1,33 +1,37 @@
+import subprocess
 from datetime import datetime
-from git import Repo
-from git.exc import GitCommandError, InvalidGitRepositoryError
+
+# 仓库绝对路径，根据实际环境修改
+repo_path = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
+
+
+def git_run(cmd_list):
+    """执行git命令封装"""
+    proc = subprocess.run(cmd_list, cwd=repo_path, capture_output=True, text=True, encoding="utf‑8")
+    return proc
+
 
 try:
-    # 使用绝对路径，防止相对路径定位错误，请确认路径和你电脑一致
-    repo_path = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old"
-    repo = Repo(repo_path)
+    # git add .
+    res_add = git_run(["git", "add", "."])
+    if res_add.returncode != 0:
+        raise Exception(f"git add 失败：{res_add.stderr}")
 
-    # ========== 等价 git add . （不使用 -A，不处理本地删除的文件） ==========
-    repo.index.add(["."])
-    # repo.index.remove([], working_tree=True)  # 禁用，不做git add -A行为
-    # ======================================================================
-
-    # 检查是否有改动，无改动就跳过commit、push，避免报错
-    diff = repo.index.diff("HEAD")
-    if not diff:
+    # 检查是否存在变更，git status --porcelain 有输出代表有改动
+    res_status = git_run(["git", "status", "--porcelain"])
+    if not res_status.stdout.strip():
         print("ℹ️ 没有检测到任何改动，无需提交推送")
     else:
-        # 本地提交
         commit_msg = f"自动同步 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        repo.index.commit(commit_msg)
-        # 推送：本地main分支推送到远程 005.490_main_old
-        origin = repo.remote("origin")
-        push_result = origin.push("main:005.490_main_old")
-        print("✅ 推送成功！结果：", push_result)
+        res_commit = git_run(["git", "commit", "-m", commit_msg])
+        if res_commit.returncode != 0:
+            raise Exception(f"commit失败：{res_commit.stderr}")
 
-except InvalidGitRepositoryError:
-    print("❌ 错误：指定目录不是合法Git仓库，请检查路径和里面的.git文件夹")
-except GitCommandError as e:
-    print("❌ Git执行失败：", e)
+        # 推送：本地main → 远程005.490_main_old
+        res_push = git_run(["git", "push", "origin", "main:005.490_main_old"])
+        if res_push.returncode != 0:
+            raise Exception(f"push失败：{res_push.stderr}")
+        print("✅ 推送成功！")
+
 except Exception as e:
-    print("❌ 其他异常：", e)
+    print(f"❌ 异常：{e}")
