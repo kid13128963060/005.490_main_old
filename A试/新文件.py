@@ -17,7 +17,7 @@ try:
     if res_add.returncode != 0:
         raise Exception(f"git add 失败：{res_add.stderr}")
 
-    # 检查是否存在变更，git status --porcelain 有输出代表有改动
+    # 检查是否存在变更，git status --porcelain 有输出代表改动
     res_status = git_run(["git", "status", "--porcelain"])
     if not res_status.stdout.strip():
         print("ℹ️ 没有检测到任何改动，无需提交推送")
@@ -28,7 +28,7 @@ try:
             raise Exception(f"commit失败：{res_commit.stderr}")
 
         # 推送：本地main → 远程005.490_main_old
-        res_push = git_run(["git", "push", "origin", "main:005.490_main_old"])
+        res_push = git_run(["git", "push", "origin", "main"])
         if res_push.returncode != 0:
             raise Exception(f"push失败：{res_push.stderr}")
         print("✅ 推送成功！")
