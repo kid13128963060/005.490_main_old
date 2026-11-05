@@ -7,7 +7,7 @@ def enable_wlan_adapter():
     p = subprocess.run(
         ["powershell.exe", "-NoProfile", "-Command", ps_cmd], capture_output=True, text=True, shell=False
     )
-    print("out:", p.stdout)
+    print("out:1", p.stdout)
     print("err:", p.stderr)
     return p.returncode
 
