@@ -12,9 +12,17 @@ import os
 import sys
 import subprocess
 
-from Combination_Module.git_auto_sync import git_auto_sync
 from Combination_Module.read_excel_const import read_simulator_cell
 from Combination_Module.vscode_activate_with_keys import vscode_activate_with_keys
+from Combination_Module.run_python_script import run_python_script, run_script_capture, run_script_get_stdout
+from module.au3_compile import compile_au3_to_exe
 
-# 激活VSCode窗口，执行热键保存所有文件
-vscode_activate_with_keys()
+ok = compile_au3_to_exe(
+    au3_path=r"E:\au3test\卸载.au3",
+    exe_path=r"E:\au3test\卸载_auto.exe",
+    aut2exe=r"C:\Program Files (x86)\AutoIt3\Aut2Exe\Aut2Exe_x64.exe",
+)
+if ok:
+    print("继续后续流程")
+else:
+    print("编译出错，终止")

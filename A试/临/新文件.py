@@ -15,6 +15,7 @@ import subprocess
 from Combination_Module.git_auto_sync import git_auto_sync
 from Combination_Module.read_excel_const import read_simulator_cell
 from Combination_Module.vscode_activate_with_keys import vscode_activate_with_keys
+from Combination_Module.run_python_script import run_python_script, run_script_capture, run_script_get_stdout
 
 # 激活VSCode窗口，执行热键保存所有文件
 vscode_activate_with_keys()
