@@ -25,4 +25,5 @@ Sleep(150)
 Send("{DOWN}")
 Sleep(150)
 
-
+; ========= 第三步：直接点击确认按钮（TBitBtn2，Au3Info读取到的控件） =========
+ControlClick("系统登录", "", "TBitBtn2")
