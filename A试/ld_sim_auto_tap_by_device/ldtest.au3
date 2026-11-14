@@ -97,7 +97,7 @@ ElseIf $sDeviceName = "家脑模拟器" Then
     If $nWaitLoad = 1 Then
        $nWaitMs = 13700
     ElseIf $nWaitLoad = 2 Then
-        $nWaitMs = 15000
+        $nWaitMs = 45000
     Else
     ;兜底默认值，防止变量为空
     $nWaitMs = 5000
