@@ -1,88 +1,195 @@
-﻿#include <File.au3>
+﻿;V1.7 ok 
+#include <Excel.au3>
+#include <Array.au3>
+;====================模式配置：1=测试模式  2=正常运行模式【默认2】====================
+Local $iRunMode = 1
+;时间选择
+Local $nWaitLoad = 1
+;===================================================================================
 
-;==================== 配置区 ====================
-Local $sAdbPath = "C:\leidian\LDPlayer9\adb.exe"
-Local $sAdbDevice = "-s emulator-5554"
-Local $sXmlLocal = @ScriptDir & "\ui.xml"
-Local $iDumpTimeout = 5000
-Local $iRetryCount = 3
-;===============================================
+;配置区
 
-Local $sAdb = '"' & $sAdbPath & '" ' & $sAdbDevice
-
-Func DumpUiXml()
-    RunWait($sAdb & " shell uiautomator dump /sdcard/ui.xml", @ScriptDir, @SW_HIDE, $iDumpTimeout)
-    If @error Then
-        ConsoleWrite("【Dump失败】模拟器内生成xml超时" & @CRLF)
-        Return False
-    EndIf
-    If FileExists($sXmlLocal) Then FileDelete($sXmlLocal)
-    RunWait($sAdb & " pull /sdcard/ui.xml " & '"' & $sXmlLocal & '"', @ScriptDir, @SW_HIDE)
-    If FileExists($sXmlLocal) Then
-        ConsoleWrite("Dump成功" & @CRLF)
-        Return True
-    Else
-        ConsoleWrite("【Pull失败】拉取xml失败" & @CRLF)
-        Return False
-    EndIf
-EndFunc
-
-Func FindByText($sXmlFile, $sSearchText)
-    Local $oXml = ObjCreate("MSXML2.DOMDocument.6.0")
-    If $oXml = 0 Then Return ""
-    $oXml.async = False
-    $oXml.validateOnParse = False
-    $oXml.load($sXmlFile)
-    If $oXml.parseError.errorCode <> 0 Then
-        ConsoleWrite("XML解析错误：" & $oXml.parseError.reason & @CRLF)
-        $oXml = 0
-        Return ""
-    EndIf
-    Local $nodes = $oXml.selectNodes("//node[@text='" & $sSearchText & "']")
-    If $nodes.length = 0 Then
-        $oXml = 0
-        Return ""
-    EndIf
-    Local $sBounds = $nodes[0].getAttribute("bounds")
-    $oXml = 0
-    Return BoundsToCenter($sBounds)
-EndFunc
-
-Func BoundsToCenter($sBounds)
-    $sBounds = StringReplace(StringReplace($sBounds, "[", ","), "]", ",")
-    Local $aSplit = StringSplit($sBounds, ",")
-    If $aSplit[0] < 5 Then Return ""
-    Local $x1 = $aSplit[2], $y1 = $aSplit[3], $x2 = $aSplit[4], $y2 = $aSplit[5]
-    Local $cx = ($x1 + $x2) / 2
-    Local $cy = ($y1 + $y2) / 2
-    Return $cx & "," & $cy
-EndFunc
-
-; ========== 主逻辑：查找并点击【退出登录】 ==========
-Local $sPos = ""
-For $i = 1 To $iRetryCount
-    ConsoleWrite(@CRLF & "====第" & $i & "次查找【退出登录】====" & @CRLF)
-    If DumpUiXml() = False Then
-        Sleep(1500)
-        ContinueLoop
-    EndIf
-    $sPos = FindByText($sXmlLocal, "退出登录")
-    If $sPos <> "" Then
-        ConsoleWrite("✅ 找到退出登录按钮，坐标：" & $sPos & @CRLF)
-        Break
-    EndIf
-    Sleep(2000)
-Next
-
-If $sPos = "" Then
-    MsgBox(0, "失败", "多次重试，未找到【退出登录】按钮！")
-    If FileExists($sXmlLocal) Then FileDelete($sXmlLocal)
+;设备识别
+Local $sExcelFile = "F:\自动同步_只增加\设备识别\设备识别.xls"
+Local $oExcel = _Excel_Open(False)
+If @error Then
+    MsgBox(0,"错误","Excel COM启动失败")
     Exit
 EndIf
 
-Local $aXY = StringSplit($sPos, ",")
-RunWait($sAdb & " shell input tap " & $aXY[1] & " " & $aXY[2], @ScriptDir, @SW_HIDE)
-Sleep(1000)
+Local $oBook = _Excel_BookOpen($oExcel, $sExcelFile, True, False)
+If @error Then
+    MsgBox(0,"错误","打开文件失败")
+    _Excel_Close($oExcel)
+    Exit
+EndIf
 
-If FileExists($sXmlLocal) Then FileDelete($sXmlLocal)
-ConsoleWrite("👉 退出登录点击指令已发送" & @CRLF)
+; 读取B2
+Local $sB2 = _Excel_RangeRead($oBook, Default, "B2")
+; MsgBox(0,"提示", "读到的设备名：" & $sB2)
+
+; 释放COM
+_Excel_BookClose($oBook)
+_Excel_Close($oExcel)
+
+
+;数据区
+; 声明定义点击数组：3个点，每个点x,y
+
+
+;数据区
+Local $tap_test[7][2]     ;测试模式数组
+Local $tap_normal[7][2]   ;正常运行模式数组
+Local $tap_points[7][2]   ;实际执行数组
+Local $tap_points1[2][2]  ;备用数组保留
+Local $sAdb, $sWorkDir, $sDnConsole, $nWaitMs
+
+$sDeviceName = $sB2
+If $sDeviceName = "工脑模拟器" Then
+     $sAdb = "C:\leidian\LDPlayer9\adb.exe"
+     $sWorkDir = "C:\leidian\LDPlayer9"
+     $sDnConsole = "C:\leidian\LDPlayer9\dnconsole.exe" ;dnplayer
+    If $nWaitLoad = 1 Then
+        $nWaitMs = 75000
+    ElseIf $nWaitLoad = 2 Then
+        $nWaitMs = 65000
+    Else
+    ;兜底默认值，防止变量为空
+    $nWaitMs = 5000
+    ConsoleWrite("警告：$nWaitLoad 不是1/2，使用默认等待时间" & @CRLF)
+    EndIf
+;----------工脑模拟器 测试模式点位----------
+    $tap_test[0][0] = 169
+    $tap_test[0][1] = 632   ; 第一步：打开自动按键点击
+    $tap_test[1][0] = 945
+    $tap_test[1][1] = 1815  ; 第二步：点击我的
+    $tap_test[2][0] = 200
+    $tap_test[2][1] = 255   ; 第三步：点击春眠
+    $tap_test[3][0] = 540
+    $tap_test[3][1] = 1450  ;第三步：点退出登录
+    $tap_test[4][0] = 540
+    $tap_test[4][1] = 1899
+    $tap_test[5][0] = 168
+    $tap_test[5][1] = 1775
+    $tap_test[6][0] = 540
+    $tap_test[6][1] = 1425
+    ;----------工脑模拟器 正常模式点位----------
+    $tap_normal[0][0] = 169
+    $tap_normal[0][1] = 632   ; 第一步：打开自动按键点击
+    $tap_normal[1][0] = 945
+    $tap_normal[1][1] = 1815  ; 第二步：点击我的
+    $tap_normal[2][0] = 200
+    $tap_normal[2][1] = 255   ; 第三步：点击春眠
+    $tap_normal[3][0] = 540
+    $tap_normal[3][1] = 1450  ;第三步：点退出登录
+    $tap_normal[4][0] = 540
+    $tap_normal[4][1] = 1899
+    $tap_normal[5][0] = 168
+    $tap_normal[5][1] = 1775
+    $tap_normal[6][0] = 540
+    $tap_normal[6][1] = 1425    
+ElseIf $sDeviceName = "家脑模拟器" Then
+    ;MsgBox(0,"提示", "读到的设备名：" & $sB2)
+    $sAdb = "E:\Program Files\leidian\LDPlayer9\adb.exe"
+    $sWorkDir = "E:\Program Files\leidian\LDPlayer9"
+    $sDnConsole = '"E:\Program Files\leidian\LDPlayer9\dnconsole.exe"'
+    $nWaitMs = 7000
+
+    ;----------家脑模拟器 测试模式点位----------
+    $tap_test[0][0] = 0
+    $tap_test[0][1] = 0   ; 第一步：打开自动按键点击
+    $tap_test[1][0] = 0
+    $tap_test[1][1] = 0  ; 第二步：点击我的
+    $tap_test[2][0] = 0
+    $tap_test[2][1] = 0  ; 第三步：点击春眠
+    $tap_test[3][0] = 0
+    $tap_test[3][1] = 0
+    $tap_test[4][0] = 0
+    $tap_test[4][1] = 0
+    $tap_test[5][0] = 0
+    $tap_test[5][1] = 0
+    $tap_test[6][0] = 0
+    $tap_test[6][1] = 0
+
+    ;----------家脑模拟器 正常模式点位----------
+    $tap_normal[0][0] = 0
+    $tap_normal[0][1] = 0   ; 第一步：打开自动按键点击
+    $tap_normal[1][0] = 0
+    $tap_normal[1][1] = 0  ; 第二步：点击我的
+    $tap_normal[2][0] = 0
+    $tap_normal[2][1] = 0  ; 第三步：点击春眠
+    $tap_normal[3][0] = 0
+    $tap_normal[3][1] = 0
+    $tap_normal[4][0] = 0
+    $tap_normal[4][1] = 0
+    $tap_normal[5][0] = 0
+    $tap_normal[5][1] = 0
+    $tap_normal[6][0] = 0
+    $tap_normal[6][1] = 0
+
+Else
+    MsgBox(0,"提示","未知设备：" & $sDeviceName)
+    Exit
+EndIf
+
+
+;_ArrayDisplay($tap_points, "tap_points 坐标数组")
+
+;根据模式复制数据到执行数组tap_points
+If $iRunMode = 1 Then
+    ;MsgBox(0,"模式提示","当前【测试模式】")
+    For $i = 0 To 6
+        $tap_points[$i][0] = $tap_test[$i][0]
+        $tap_points[$i][1] = $tap_test[$i][1]
+    Next
+ElseIf $iRunMode = 2 Then
+    ;MsgBox(0,"模式提示","当前【正常运行模式】")
+    For $i = 0 To 6
+        $tap_points[$i][0] = $tap_normal[$i][0]
+        $tap_points[$i][1] = $tap_normal[$i][1]
+    Next
+Else
+    MsgBox(0,"错误","模式变量只能填写1或者2")
+    Exit
+EndIf
+
+;_ArrayDisplay($tap_points, "tap_points 坐标数组")
+
+
+; 滑动一维数组 [x1,y1,x2,y2,时长]
+Local $swipe_param[5]
+$swipe_param[0] = 500
+$swipe_param[1] = 1400
+$swipe_param[2] = 500
+$swipe_param[3] = 600
+$swipe_param[4] = 300
+
+; ========== 使用dnconsole启动0号模拟器 ==========
+Local $launchCmd = $sDnConsole & " launch --index 0"
+MsgBox(0,"调试：启动命令", $launchCmd)
+
+Run($sDnConsole & " launch --index 0", $sWorkDir, @SW_HIDE)
+Sleep($nWaitMs)
+
+; 等待雷电模拟器启动
+If WinWait("雷电模拟器", "", 80) = 0 Then
+    MsgBox(0,"错误","雷电模拟器启动超时")
+    Exit
+EndIf
+WinActivate("雷电模拟器")
+Sleep(3000) ; 等待桌面加载完成
+
+; 循环点击，增加坐标0跳过逻辑
+For $i = 0 To UBound($tap_points) - 1
+    Local $x = $tap_points[$i][0]
+    Local $y = $tap_points[$i][1]
+    If $x = 0 And $y = 0 Then
+        ConsoleWrite("第" & $i & "组坐标全0，跳过点击" & @CRLF)
+        ContinueLoop
+    EndIf
+    RunWait($sAdb & " shell input tap " & $x & " " & $y, $sWorkDir, @SW_HIDE)
+    Sleep(2600)
+Next
+
+
+; MsgBox(0,"完成","脚本全部动作执行完毕")
