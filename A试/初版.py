@@ -1,5 +1,6 @@
 ﻿import shutil
 from pathlib import Path
+from module.list_operate import list_operate
 
 
 def del_by_list(root_dir: str, txt_path: str):
