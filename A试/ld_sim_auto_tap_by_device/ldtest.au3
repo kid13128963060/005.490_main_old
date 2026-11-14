@@ -2,9 +2,8 @@
 #include <Excel.au3>
 #include <Array.au3>
 ;====================模式配置：1=测试模式  2=正常运行模式【默认2】====================
-Local $iRunMode = 1
+Local $iRunMode = 2
 ;时间选择
-Local $nWaitLoad = 1
 ;===================================================================================
 
 ;配置区
@@ -49,6 +48,7 @@ If $sDeviceName = "工脑模拟器" Then
      $sAdb = "C:\leidian\LDPlayer9\adb.exe"
      $sWorkDir = "C:\leidian\LDPlayer9"
      $sDnConsole = "C:\leidian\LDPlayer9\dnconsole.exe" ;dnplayer
+    Local $nWaitLoad = 2
     If $nWaitLoad = 1 Then
         $nWaitMs = 75000
     ElseIf $nWaitLoad = 2 Then
@@ -71,8 +71,8 @@ If $sDeviceName = "工脑模拟器" Then
     $tap_test[4][1] = 1899
     $tap_test[5][0] = 168
     $tap_test[5][1] = 1775
-    $tap_test[6][0] = 540
-    $tap_test[6][1] = 1425
+    $tap_test[6][0] = 0
+    $tap_test[6][1] = 0
     ;----------工脑模拟器 正常模式点位----------
     $tap_normal[0][0] = 169
     $tap_normal[0][1] = 632   ; 第一步：打开自动按键点击
@@ -93,39 +93,48 @@ ElseIf $sDeviceName = "家脑模拟器" Then
     $sAdb = "E:\Program Files\leidian\LDPlayer9\adb.exe"
     $sWorkDir = "E:\Program Files\leidian\LDPlayer9"
     $sDnConsole = '"E:\Program Files\leidian\LDPlayer9\dnconsole.exe"'
-    $nWaitMs = 7000
+    Local $nWaitLoad = 2
+    If $nWaitLoad = 1 Then
+       $nWaitMs = 13700
+    ElseIf $nWaitLoad = 2 Then
+        $nWaitMs = 15000
+    Else
+    ;兜底默认值，防止变量为空
+    $nWaitMs = 5000
+    ConsoleWrite("警告：$nWaitLoad 不是1/2，使用默认等待时间" & @CRLF)
+    EndIf
 
     ;----------家脑模拟器 测试模式点位----------
-    $tap_test[0][0] = 0
-    $tap_test[0][1] = 0   ; 第一步：打开自动按键点击
-    $tap_test[1][0] = 0
-    $tap_test[1][1] = 0  ; 第二步：点击我的
-    $tap_test[2][0] = 0
-    $tap_test[2][1] = 0  ; 第三步：点击春眠
-    $tap_test[3][0] = 0
-    $tap_test[3][1] = 0
-    $tap_test[4][0] = 0
-    $tap_test[4][1] = 0
-    $tap_test[5][0] = 0
-    $tap_test[5][1] = 0
-    $tap_test[6][0] = 0
-    $tap_test[6][1] = 0
+    $tap_test[0][0] = 175
+    $tap_test[0][1] = 635   ; 第一步：打开自动按键点击
+    $tap_test[1][0] = 943
+    $tap_test[1][1] = 1815  ; 第二步：点击我的
+    $tap_test[2][0] = 430
+    $tap_test[2][1] = 230  ; 第三步：点击春眠
+    $tap_test[3][0] = 560
+    $tap_test[3][1] = 1475  ; 第四步：点击账号登录
+    $tap_test[4][0] = 510
+    $tap_test[4][1] = 1890    ; 第五步：点击登录
+    $tap_test[5][0] = 170
+    $tap_test[5][1] = 1774    ; 第六步：勾选同意
+    $tap_test[6][0] = 534
+    $tap_test[6][1] = 1430    ; 第七步：再点击登录
 
     ;----------家脑模拟器 正常模式点位----------
-    $tap_normal[0][0] = 0
-    $tap_normal[0][1] = 0   ; 第一步：打开自动按键点击
-    $tap_normal[1][0] = 0
-    $tap_normal[1][1] = 0  ; 第二步：点击我的
-    $tap_normal[2][0] = 0
-    $tap_normal[2][1] = 0  ; 第三步：点击春眠
-    $tap_normal[3][0] = 0
-    $tap_normal[3][1] = 0
-    $tap_normal[4][0] = 0
-    $tap_normal[4][1] = 0
-    $tap_normal[5][0] = 0
-    $tap_normal[5][1] = 0
+    $tap_normal[0][0] = 175
+    $tap_normal[0][1] = 635   ; 第一步：打开自动按键点击
+    $tap_normal[1][0] = 943
+    $tap_normal[1][1] = 1815  ; 第二步：点击我的
+    $tap_normal[2][0] = 430
+    $tap_normal[2][1] = 230  ; 第三步：点击春眠
+    $tap_normal[3][0] = 560
+    $tap_normal[3][1] = 1475  ; 第四步：点击账号登录
+    $tap_normal[4][0] = 510
+    $tap_normal[4][1] = 1890    ; 第五步：点击登录
+    $tap_normal[5][0] = 170
+    $tap_normal[5][1] = 1774    ; 第六步：勾选同意
     $tap_normal[6][0] = 0
-    $tap_normal[6][1] = 0
+    $tap_normal[6][1] = 0    ; 第七步：再点击登录
 
 Else
     MsgBox(0,"提示","未知设备：" & $sDeviceName)
@@ -166,9 +175,10 @@ $swipe_param[4] = 300
 
 ; ========== 使用dnconsole启动0号模拟器 ==========
 Local $launchCmd = $sDnConsole & " launch --index 0"
-MsgBox(0,"调试：启动命令", $launchCmd)
+; MsgBox(0,"调试：启动命令", $launchCmd)
 
 Run($sDnConsole & " launch --index 0", $sWorkDir, @SW_HIDE)
+;Exit         ; 退出，返回码0
 Sleep($nWaitMs)
 
 ; 等待雷电模拟器启动
