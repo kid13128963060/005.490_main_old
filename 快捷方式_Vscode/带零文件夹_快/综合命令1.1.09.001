@@ -1,0 +1,12 @@
+//Git
+//同步
+git pull   #拉取远程更新
+git add .#把磁盘上已经保存好的文件交给 Git 版本管理。
+git commit -m "家脑090809增加命令文本_ok"
+git push   #推送本地修改
+//取消本次挑捡
+git cherry-pick --abort
+//只删本地改动，**分支历史不移动**,只丢掉本地文件改动，分支停留在当前最新提交不动
+git restore .
+//回退历史，本地修改保留在工作区
+git reset --mixed 粘贴复制的commit哈希

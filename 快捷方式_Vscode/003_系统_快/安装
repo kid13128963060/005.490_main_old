@@ -1,0 +1,27 @@
+
+ollama
+ollama pull qwen2.5-coder:7b  #阿里通义代码模型
+
+PowerShell7 升级命令
+
+
+检查是否有可用更新
+PowerShell【管理员】打开
+winget list --id Microsoft.PowerShell --upgrade-available
+执行升级
+winget upgrade --id Microsoft.PowerShell
+升级后验证版本
+pwsh --versio
+
+Python
+PowerShell【管理员】打开
+# 升级已安装的Python
+winget search Python.Python  #查看版本列表
+winget install -e --id Python.Python.3.13   #全新安装 Python
+winget upgrade Python.Python.3   #升级
+升级 winget（Windows 包管理器本身）
+winget --version  #查看当前版本
+winget upgrade Microsoft.AppInstaller
+winget source update  #只是更新包索引
+
+
