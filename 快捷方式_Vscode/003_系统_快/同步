@@ -1,4 +1,0 @@
-git pull   #拉取远程更新
-git add .
-git commit -m "家脑090808_ok"
-git push   #推送本地修改

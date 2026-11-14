@@ -1,1 +1,0 @@
-xcopy C:\IDM D:\backup\ /S /E /Y
