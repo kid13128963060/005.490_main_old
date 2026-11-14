@@ -97,7 +97,7 @@ ElseIf $sDeviceName = "家脑模拟器" Then
     If $nWaitLoad = 1 Then
        $nWaitMs = 13700
     ElseIf $nWaitLoad = 2 Then
-        $nWaitMs = 45000
+        $nWaitMs = 53000
     Else
     ;兜底默认值，防止变量为空
     $nWaitMs = 5000
@@ -198,7 +198,7 @@ For $i = 0 To UBound($tap_points) - 1
         ContinueLoop
     EndIf
     RunWait($sAdb & " shell input tap " & $x & " " & $y, $sWorkDir, @SW_HIDE)
-    Sleep(2600)
+    Sleep(3200)
 Next
 
 
