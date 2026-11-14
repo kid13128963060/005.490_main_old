@@ -198,8 +198,13 @@ For $i = 0 To UBound($tap_points) - 1
         ContinueLoop
     EndIf
     RunWait($sAdb & " shell input tap " & $x & " " & $y, $sWorkDir, @SW_HIDE)
-    Sleep(3200)
+    If $i = 0 Then
+        Sleep(8000) ; 第一步单独等待，你可以改这个数值
+    Else
+        Sleep(3200) ; 其余步骤默认等待
+    EndIf
 Next
+
 
 
 ; MsgBox(0,"完成","脚本全部动作执行完毕")
