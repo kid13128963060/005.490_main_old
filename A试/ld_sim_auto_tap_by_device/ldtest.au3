@@ -1,4 +1,4 @@
-﻿;V1.7 ok 
+﻿;V1.7 ok
 #include <Excel.au3>
 #include <Array.au3>
 ;====================模式配置：1=测试模式  2=正常运行模式【默认2】====================
@@ -87,7 +87,7 @@ If $sDeviceName = "工脑模拟器" Then
     $tap_normal[5][0] = 168
     $tap_normal[5][1] = 1775
     $tap_normal[6][0] = 540
-    $tap_normal[6][1] = 1425    
+    $tap_normal[6][1] = 1425
 ElseIf $sDeviceName = "家脑模拟器" Then
     ;MsgBox(0,"提示", "读到的设备名：" & $sB2)
     $sAdb = "E:\Program Files\leidian\LDPlayer9\adb.exe"
@@ -97,7 +97,7 @@ ElseIf $sDeviceName = "家脑模拟器" Then
     If $nWaitLoad = 1 Then
        $nWaitMs = 13700
     ElseIf $nWaitLoad = 2 Then
-        $nWaitMs = 53000
+        $nWaitMs = 60000
     Else
     ;兜底默认值，防止变量为空
     $nWaitMs = 5000
@@ -199,7 +199,7 @@ For $i = 0 To UBound($tap_points) - 1
     EndIf
     RunWait($sAdb & " shell input tap " & $x & " " & $y, $sWorkDir, @SW_HIDE)
     If $i = 0 Then
-        Sleep(8000) ; 第一步单独等待，你可以改这个数值
+        Sleep(9000) ; 第一步单独等待，你可以改这个数值
     Else
         Sleep(3200) ; 其余步骤默认等待
     EndIf
