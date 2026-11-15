@@ -1,9 +1,8 @@
-﻿;V1.7 ok
+﻿;V1.7 
 #include <Excel.au3>
 #include <Array.au3>
 ;====================模式配置：1=测试模式  2=正常运行模式【默认2】====================
 Local $iRunMode = 2
-;时间选择
 ;===================================================================================
 
 ;配置区
@@ -86,8 +85,8 @@ If $sDeviceName = "工脑模拟器" Then
     $tap_normal[4][1] = 1899
     $tap_normal[5][0] = 168
     $tap_normal[5][1] = 1775
-    $tap_normal[6][0] = 540
-    $tap_normal[6][1] = 1425
+    $tap_normal[6][0] = 0
+    $tap_normal[6][1] = 0
 ElseIf $sDeviceName = "家脑模拟器" Then
     ;MsgBox(0,"提示", "读到的设备名：" & $sB2)
     $sAdb = "E:\Program Files\leidian\LDPlayer9\adb.exe"
