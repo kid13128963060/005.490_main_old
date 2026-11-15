@@ -5,7 +5,7 @@
 ; ==============================================
 Local $sDevice = "emulator-5554"
 Local $sRemoteImg = "/sdcard/test.png"
-Local $sLocalImg = "E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old\A试\ld_sim_auto_tap_by_device\test.png"
+Local $sLocalImg = @TempDir & "\pop-up.png"
 
 ;设备识别
 Local $sExcelFile = "F:\自动同步_只增加\设备识别\设备识别.xls"
