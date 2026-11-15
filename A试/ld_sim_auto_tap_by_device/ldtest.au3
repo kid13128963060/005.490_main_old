@@ -85,8 +85,8 @@ If $sDeviceName = "工脑模拟器" Then
     $tap_normal[4][1] = 1899
     $tap_normal[5][0] = 168
     $tap_normal[5][1] = 1775
-    $tap_normal[6][0] = 0
-    $tap_normal[6][1] = 0
+    $tap_normal[6][0] = 0  ;540
+    $tap_normal[6][1] = 0  ;1430
 ElseIf $sDeviceName = "家脑模拟器" Then
     ;MsgBox(0,"提示", "读到的设备名：" & $sB2)
     $sAdb = "E:\Program Files\leidian\LDPlayer9\adb.exe"
@@ -98,9 +98,9 @@ ElseIf $sDeviceName = "家脑模拟器" Then
     ElseIf $nWaitLoad = 2 Then
         $nWaitMs = 60000
     Else
-    ;兜底默认值，防止变量为空
-    $nWaitMs = 5000
-    ConsoleWrite("警告：$nWaitLoad 不是1/2，使用默认等待时间" & @CRLF)
+        ;兜底默认值，防止变量为空
+        $nWaitMs = 5000
+        ConsoleWrite("警告：$nWaitLoad 不是1/2，使用默认等待时间" & @CRLF)
     EndIf
 
     ;----------家脑模拟器 测试模式点位----------
