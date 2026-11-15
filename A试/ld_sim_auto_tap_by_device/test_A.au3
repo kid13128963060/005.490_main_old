@@ -2,12 +2,13 @@
 #include <Array.au3>
 
 ; ==============================================
-; V1.1 ok ADB 雷电模拟器截图 + pull拉取图片
-; 设备：emulator-5554
+; V1.2 ok合并版 ADB雷电模拟器截图+pull + Tesseract‑OCR识别“知道了”自动点击
+; 变量命名遵循代码3标准：$sAdb / $sWorkDir
 ; ==============================================
 Local $sDevice = "emulator-5554"
 Local $sRemoteImg = "/sdcard/test.png"
 Local $sLocalImg = @TempDir & "\pop-up.png"
+Local $sAdb, $sWorkDir, $sDnConsole, $nWaitMs
 
 ;设备识别
 Local $sExcelFile = "F:\自动同步_只增加\设备识别\设备识别.xls"
@@ -31,42 +32,40 @@ Local $sB2 = _Excel_RangeRead($oBook, Default, "B2")
 _Excel_BookClose($oBook)
 _Excel_Close($oExcel)
 
-$sDeviceName = $sB2
+Local $sDeviceName = $sB2
 If $sDeviceName = "工脑模拟器" Then
-Local     $sAdbPath = "c:\leidian\LDPlayer9\adb.exe"
-
+    $sAdb = "C:\leidian\LDPlayer9\adb.exe"
+    $sWorkDir = "C:\leidian\LDPlayer9"
 ElseIf $sDeviceName = "家脑模拟器" Then
-Local     $sAdbPath = "E:\Program Files\leidian\LDPlayer9\adb.exe"
-
+    $sAdb = "E:\Program Files\leidian\LDPlayer9\adb.exe"
+    $sWorkDir = "E:\Program Files\leidian\LDPlayer9"
 Else
     MsgBox(16, "错误", "未识别的设备名：" & $sDeviceName)
     Exit
 EndIf
 
 ; 第一条：adb shell screencap 截图
-    Local $sCmd1 = '"' & $sAdbPath & '" -s ' & $sDevice & ' shell screencap ' & $sRemoteImg
+Local $sCmd1 = '"' & $sAdb & '" -s ' & $sDevice & ' shell screencap ' & $sRemoteImg
 ConsoleWrite("执行截图命令：" & $sCmd1 & @CRLF)
-    Local $iRet1 = RunWait($sCmd1, "", @SW_HIDE)
-    If $iRet1 <> 0 Then
-        MsgBox(16, "错误", "截图命令失败！返回码：" & $iRet1)
+Local $iRet1 = RunWait($sCmd1, $sWorkDir, @SW_HIDE)
+If $iRet1 <> 0 Then
+    MsgBox(16, "错误", "截图命令失败！返回码：" & $iRet1)
     Exit
-    EndIf
+EndIf
 
 ; 加短暂延时，等模拟器文件写入完成（很关键，防止pull拿到空/损坏图片）
-    Sleep(800)
+Sleep(800)
 
-    ; 第二条：adb pull 拉取到本地
-    Local $sCmd2 = '"' & $sAdbPath & '" -s ' & $sDevice & ' pull ' & $sRemoteImg & ' "' & $sLocalImg & '"'
-ConsoleWrite("执行pull命令：" & $sCmd2 & @CRLF)
-    Local $iRet2 = RunWait($sCmd2, "", @SW_HIDE)
-    If $iRet2 <> 0 Then
-        MsgBox(16, "错误", "pull拉取图片失败！返回码：" & $iRet2)
-    Exit
-    EndIf
-;MsgBox(0, "完成", "截图+拉取成功！" & @CRLF & $sLocalImg)
+; 第二条：adb pull 拉取到本地临时目录
+;~ Local $sCmd2 = '"' & $sAdb & '" -s ' & $sDevice & ' pull ' & $sRemoteImg & ' "' & $sLocalImg & '"'
+;~ ConsoleWrite("执行pull命令：" & $sCmd2 & @CRLF)
+;~ Local $iRet2 = RunWait($sCmd2, $sWorkDir, @SW_HIDE)
+;~ If $iRet2 <> 0 Then
+;~     MsgBox(16, "错误", "pull拉取图片失败！返回码：" & $iRet2)
+;~     Exit
+;~ EndIf
 
-
-; ==================== 【代码2 合并在此处】Tesseract OCR 测试 ====================
+; ==================== 【代码2合并至此】Tesseract OCR 模块 ====================
 ; 注意：已经把 Tesseract 加入系统PATH，否则要写完整路径如："D:\Tesseract-OCR\tesseract.exe"
 Local $sTesseract = "tesseract.exe"
 Local $sImgPath = @TempDir & "\pop-up.png"
@@ -77,13 +76,23 @@ Local $sLang = "chi_sim+eng"               ;同时识别中文+英文
 Local $sCmd = $sTesseract & " """ & $sImgPath & """ """ & $sOutTxt & """ -l " & $sLang
 
 ConsoleWrite("执行OCR命令：" & $sCmd & @CRLF)
-    RunWait($sCmd, @TempDir, @SW_HIDE)
+RunWait($sCmd, @TempDir, @SW_HIDE)
 
 ; 读取识别结果
-    Local         $sResult = FileRead($sOutTxt & ".txt")
-        ConsoleWrite("====识别结果====" & @CRLF & $sResult & @CRLF)
-MsgBox(0, "OCR识别结果", $sResult)
+Local $sResult = FileRead($sOutTxt & ".txt")
+ConsoleWrite("====识别结果====" & @CRLF & $sResult & @CRLF)
+
+; ========== 查找目标文字【知道了】 ==========
+Local $sTarget = "知道了"
+If StringInStr($sResult, $sTarget) Then
+    ConsoleWrite("✅ 识别到目标文字：" & $sTarget & @CRLF)
+    ; 沿用代码3点击格式，使用变量 $sAdb、$sWorkDir
+    RunWait($sAdb & " shell input tap " & 169 & " " & 630, $sWorkDir, @SW_HIDE)
+    ConsoleWrite("👉 执行点击坐标 169 630" & @CRLF)
+Else
+    ConsoleWrite("❌ 未识别到【" & $sTarget & "】" & @CRLF)
+EndIf
 
 ; 清理临时文件
-FileDelete($sOutTxt & ".txt")
-FileDelete($sLocalImg)
+;~ FileDelete($sOutTxt & ".txt")
+;~ FileDelete($sLocalImg)
