@@ -1,0 +1,5 @@
+﻿F:\自动同步_只增加\快捷方式_自\0.1.1.1常用
+C:\Users\Administrator\AppData\Local\Programs\Microsoft VS Code\Code.exe
+C:\Program Files\Ditto\Ditto.exe
+E:\备份盘\600----------------------------技术-应用科学_同\650_管理及辅助服务\650_11_时间管理\短期任务.txt
+E:\备份盘\600----------------------------技术-应用科学_同\650_管理及辅助服务\650_11_时间管理\短临.docx
