@@ -1,4 +1,5 @@
-﻿import win32com.client
+﻿# v1.0
+import win32com.client
 import win32gui
 import win32con
 import win32api
@@ -8,98 +9,137 @@ import time
 import pythoncom
 import subprocess
 
-# 配置常量：关机倒计时秒数
 SHUTDOWN_DELAY = 10
 
 
 def close_all_word_documents():
-    """保存并关闭所有打开的Word文档，兼容Word未启动场景"""
     pythoncom.CoInitialize()
+    word_com_ok = False
     try:
-        # 捕获Word没有运行的异常
-        try:
-            word = win32com.client.GetActiveObject("Word.Application")
-        except OSError:
-            print("没有检测到正在运行的Word程序")
-            return
-
-        doc_count = word.Documents.Count
-        if doc_count <= 0:
-            print("没有打开的Word文档")
-            return
-
-        print(f"发现 {doc_count} 个打开的Word文档，正在关闭并保存...")
-        # 复制文档列表，避免循环过程集合变化
-        docs = [doc for doc in word.Documents]
-        for doc in docs:
+        word = win32com.client.GetActiveObject("Word.Application")
+        doc_list = []
+        for i in range(word.Documents.Count):
+            doc = word.Documents(i + 1)
+            doc_list.append(doc)
+        print(f"【COM捕获】一共 {len(doc_list)} 个Word文档")
+        # 先全部保存
+        for doc in doc_list:
             try:
                 doc.Save()
-                print(f"已保存: {doc.Name}")
+                print(f"✅ COM已保存: {doc.Name}")
             except Exception as e:
-                print(f"保存文档 {doc.Name} 时出错: {repr(e)}")
+                print(f"⚠️ COM保存失败 {doc.Name}: {repr(e)}")
+        # COM尝试关闭
+        for doc in reversed(doc_list):
             try:
-                doc.Close()
-                print(f"已关闭: {doc.Name}")
+                doc.Close(SaveChanges=0)
+                print(f"✅ COM关闭文档: {doc.Name}")
             except Exception as e:
-                print(f"关闭文档 {doc.Name} 时出错: {repr(e)}")
-
+                print(f"⚠️ COM关闭文档失败（COM断连是Word通病）: {repr(e)}")
+        word_com_ok = True
+    except OSError:
+        print("【COM】没有检测到Word程序")
     except Exception as e:
-        print(f"Word操作出错: {repr(e)}")
+        print(f"【COM】异常：{repr(e)}")
     finally:
         pythoncom.CoUninitialize()
 
+    # ========== 兜底方案：枚举Word窗口，强制WM_CLOSE，把剩下残留标签页全部关掉 ==========
+    print("\n===== 启动窗口兜底关闭Word =====")
+    word_hwnds = []
+
+    def enum_windows_callback(hwnd, extra):
+        if win32gui.IsWindowVisible(hwnd):
+            cls = win32gui.GetClassName(hwnd)
+            # Word主窗口类名：OpusApp
+            if cls == "OpusApp":
+                word_hwnds.append(hwnd)
+        return True
+
+    win32gui.EnumWindows(enum_windows_callback, None)
+    print(f"【窗口兜底】找到 {len(word_hwnds)} 个Word主窗口(OpusApp)")
+
+    for hwnd in word_hwnds:
+        title = win32gui.GetWindowText(hwnd)
+        print(f"发送关闭消息给Word窗口：{title}  hwnd={hwnd}")
+        # 发送关闭消息，Word自己弹出保存提示（已经COM保存过，点保存不会重复）
+        win32gui.SendMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+        time.sleep(0.8)
+
 
 def send_ctrl_s(hwnd):
-    """安全发送 Ctrl+S，修复按键抬起顺序错误"""
-    # 按下Ctrl
     win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
-    # 按下S
     win32api.keybd_event(ord("S"), 0, 0, 0)
     time.sleep(0.15)
-    # 先释放S，再释放Ctrl
     win32api.keybd_event(ord("S"), 0, win32con.KEYEVENTF_KEYUP, 0)
     win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)
     time.sleep(0.6)
 
 
+def is_real_notepad_main_window(hwnd):
+    if not win32gui.IsWindowVisible(hwnd):
+        return False
+    class_name = win32gui.GetClassName(hwnd)
+    if class_name != "Notepad":
+        return False
+    title = win32gui.GetWindowText(hwnd)
+    fake_keywords = [
+        "Visual Studio Code",
+        "VSCode",
+        "vscode",
+        "PowerShell",
+        "Windows PowerShell",
+        "cmd.exe",
+        "命令行",
+        "终端",
+        "输出",
+        "调试控制台",
+        "导航",
+        "搜索",
+        "Word",
+        "Excel",
+        "Outlook",
+    ]
+    for kw in fake_keywords:
+        if kw in title:
+            return False
+    if not title:
+        return False
+    return True
+
+
 def force_save_and_close_notepad():
-    """修复记事本：移除EM_SETMODIFY致命bug，优化窗口激活容错"""
     NOTEPAD_CLASS = "Notepad"
     txt_hwnds = []
 
     def enum_callback(hwnd, extra):
-        if win32gui.IsWindowVisible(hwnd) and win32gui.GetClassName(hwnd) == NOTEPAD_CLASS:
+        if win32gui.GetClassName(hwnd) == NOTEPAD_CLASS:
             txt_hwnds.append(hwnd)
         return True
 
     win32gui.EnumWindows(enum_callback, None)
-    print(f"找到 {len(txt_hwnds)} 个记事本窗口（可见状态）")
+    print(f"\n枚举到 {len(txt_hwnds)} 个 Notepad 类窗口")
+    real_main_hwnds = [hwnd for hwnd in txt_hwnds if is_real_notepad_main_window(hwnd)]
+    print(f"识别为真正记事本主窗口 {len(real_main_hwnds)} 个")
 
-    for hwnd in txt_hwnds:
+    for hwnd in real_main_hwnds:
         if not win32gui.IsWindow(hwnd):
             continue
         title = win32gui.GetWindowText(hwnd)
-        print(f"处理窗口: {title} (句柄: {hwnd})")
+        print(f"处理记事本主窗口: {title} (句柄: {hwnd})")
         try:
             win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
             try:
                 win32gui.SetForegroundWindow(hwnd)
             except Exception:
-                # 后台权限不足无法置前台，静默跳过
                 pass
             time.sleep(0.4)
-
             send_ctrl_s(hwnd)
-
             edit_hwnd = win32gui.FindWindowEx(hwnd, None, "Edit", None)
             if edit_hwnd:
                 win32gui.SendMessage(edit_hwnd, win32con.EM_EMPTYUNDOBUFFER, 0, 0)
-
-            # 发送关闭消息
             win32gui.SendMessage(hwnd, win32con.WM_CLOSE, 0, 0)
             time.sleep(0.7)
-
-            # 判断窗口是否还存在
             if win32gui.IsWindow(hwnd):
                 _, pid = win32process.GetWindowThreadProcessId(hwnd)
                 try:
@@ -110,49 +150,36 @@ def force_save_and_close_notepad():
                     print(f"进程 {pid} 已经退出")
             else:
                 print(f"记事本窗口 {title} 已正常关闭")
-
             time.sleep(0.2)
         except Exception as e:
             print(f"处理记事本出错: {str(e)}")
-
-    print(f"已处理 {len(txt_hwnds)} 个记事本窗口")
+    print("记事本处理完成")
 
 
 def cancel_shutdown():
-    """中止系统关机（调用 shutdown /a）"""
     try:
         result = subprocess.run(["shutdown", "/a"], capture_output=True, text=True)
         if result.returncode == 0:
-            print("✅ 关机已成功中止")
+            print("\n✅ 关机已成功中止")
         else:
-            print(f"⚠️ 中止关机失败：{result.stderr.strip()}")
+            print(f"\n⚠️ 中止关机失败：{result.stderr.strip()}")
         return result.returncode == 0
     except Exception as e:
-        print(f"中止关机发生异常：{repr(e)}")
+        print(f"\n⚠️ 中止关机发生异常：{repr(e)}")
         return False
 
 
 def start_shutdown(countdown_sec: int):
-    """发起定时关机
-    :param countdown_sec: 关机倒计时秒数
-    """
     try:
-        print(f"将在{countdown_sec}秒后关机...")
-        print("程序内可调用 cancel_shutdown() 取消关机；命令行可执行 shutdown /a")
+        print(f"\n将在{countdown_sec}秒后关机...")
         subprocess.run(["shutdown", "/s", "/t", str(countdown_sec)], check=True)
         return True
     except subprocess.CalledProcessError as e:
-        print(f"关机命令执行失败: {str(e)}")
+        print(f"\n⚠️ 关机命令执行失败: {str(e)}")
         return False
 
 
 if __name__ == "__main__":
     close_all_word_documents()
     force_save_and_close_notepad()
-
     # start_shutdown(SHUTDOWN_DELAY)
-
-    # ============ 示例：测试中止功能，需要启用就把下面注释去掉 ==========
-    # print("等待3秒后演示中止关机……")
-    # time.sleep(9)
-    # cancel_shutdown()
