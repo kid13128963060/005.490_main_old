@@ -1,107 +1,185 @@
-﻿# 版本:V1.16
-# 更新：测试模式新增打开 短临.docx
-# 修复：VSCode(code.exe) 管道句柄继承导致父进程退出跟着关闭
-import subprocess
-import os
-import sys
+﻿# v1.0
+import win32com.client
+import win32gui
+import win32con
+import win32api
+import win32process
+import psutil
 import time
+import pythoncom
+import subprocess
 
-# =====================配置区=====================
-run_mode = 2  # 1=测试模式，2=正常运行模式
-delay_sec = 0.5  # 动作之间延时，单位秒
-txt_list_path = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old\A试\要打开文件清单.txt"
-ShortTask_txt_path = (
-    r"E:\备份盘\600----------------------------技术-应用科学_同\650_管理及辅助服务\650_11_时间管理\短期任务.txt"
-)
-Short临_docx_path = (
-    r"E:\备份盘\600----------------------------技术-应用科学_同\650_管理及辅助服务\650_11_时间管理\短临.docx"
-)
-# ================================================
-
-print("脚本已启动")
-print(f"run_mode = {run_mode}")
-print(f"单步延时：{delay_sec} s")
-print(f"清单路径：{txt_list_path}")
-print(f"清单文件是否存在：{os.path.exists(txt_list_path)}")
-print(f"测试附加文件：{ShortTask_txt_path}")
-print(f"附加文件是否存在：{os.path.exists(ShortTask_txt_path)}")
-print(f"测试附加docx：{Short临_docx_path}")
-print(f"docx是否存在：{os.path.exists(Short临_docx_path)}")
+SHUTDOWN_DELAY = 10
 
 
-def read_txt_list(filepath):
-    path_list = []
-    if os.path.exists(filepath):
-        with open(filepath, "r", encoding="utf-8-sig") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    path_list.append(line)
-    return path_list
+def close_all_word_documents():
+    pythoncom.CoInitialize()
+    word_com_ok = False
+    try:
+        word = win32com.client.GetActiveObject("Word.Application")
+        doc_list = []
+        for i in range(word.Documents.Count):
+            doc = word.Documents(i + 1)
+            doc_list.append(doc)
+        print(f"【COM捕获】一共 {len(doc_list)} 个Word文档")
+        # 先全部保存
+        for doc in doc_list:
+            try:
+                doc.Save()
+                print(f"✅ COM已保存: {doc.Name}")
+            except Exception as e:
+                print(f"⚠️ COM保存失败 {doc.Name}: {repr(e)}")
+        # COM尝试关闭
+        for doc in reversed(doc_list):
+            try:
+                doc.Close(SaveChanges=0)
+                print(f"✅ COM关闭文档: {doc.Name}")
+            except Exception as e:
+                print(f"⚠️ COM关闭文档失败（COM断连是Word通病）: {repr(e)}")
+        word_com_ok = True
+    except OSError:
+        print("【COM】没有检测到Word程序")
+    except Exception as e:
+        print(f"【COM】异常：{repr(e)}")
+    finally:
+        pythoncom.CoUninitialize()
+
+    # ========== 兜底方案：枚举Word窗口，强制WM_CLOSE，把剩下残留标签页全部关掉 ==========
+    print("\n===== 启动窗口兜底关闭Word =====")
+    word_hwnds = []
+
+    def enum_windows_callback(hwnd, extra):
+        if win32gui.IsWindowVisible(hwnd):
+            cls = win32gui.GetClassName(hwnd)
+            # Word主窗口类名：OpusApp
+            if cls == "OpusApp":
+                word_hwnds.append(hwnd)
+        return True
+
+    win32gui.EnumWindows(enum_windows_callback, None)
+    print(f"【窗口兜底】找到 {len(word_hwnds)} 个Word主窗口(OpusApp)")
+
+    for hwnd in word_hwnds:
+        title = win32gui.GetWindowText(hwnd)
+        print(f"发送关闭消息给Word窗口：{title}  hwnd={hwnd}")
+        # 发送关闭消息，Word自己弹出保存提示（已经COM保存过，点保存不会重复）
+        win32gui.SendMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+        time.sleep(0.8)
 
 
-path_list = read_txt_list(txt_list_path)
-print(f"读取到 {len(path_list)} 条路径")
+def send_ctrl_s(hwnd):
+    win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
+    win32api.keybd_event(ord("S"), 0, 0, 0)
+    time.sleep(0.15)
+    win32api.keybd_event(ord("S"), 0, win32con.KEYEVENTF_KEYUP, 0)
+    win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)
+    time.sleep(0.6)
 
-if run_mode == 1:
-    print("【测试模式】仅校验，并且打开短期任务.txt + 短临.docx")
-    if os.path.exists(ShortTask_txt_path):
-        print(f"📄 打开测试文件：{ShortTask_txt_path}")
-        os.startfile(ShortTask_txt_path)
-    else:
-        print(f"❌ 测试文件不存在：{ShortTask_txt_path}")
 
-    if os.path.exists(Short临_docx_path):
-        print(f"📄 打开测试docx：{Short临_docx_path}")
-        os.startfile(Short临_docx_path)
-    else:
-        print(f"❌ docx文件不存在：{Short临_docx_path}")
+def is_real_notepad_main_window(hwnd):
+    if not win32gui.IsWindowVisible(hwnd):
+        return False
+    class_name = win32gui.GetClassName(hwnd)
+    if class_name != "Notepad":
+        return False
+    title = win32gui.GetWindowText(hwnd)
+    fake_keywords = [
+        "Visual Studio Code",
+        "VSCode",
+        "vscode",
+        "PowerShell",
+        "Windows PowerShell",
+        "cmd.exe",
+        "命令行",
+        "终端",
+        "输出",
+        "调试控制台",
+        "导航",
+        "搜索",
+        "Word",
+        "Excel",
+        "Outlook",
+    ]
+    for kw in fake_keywords:
+        if kw in title:
+            return False
+    if not title:
+        return False
+    return True
 
-    if not path_list:
-        print("清单为空或文件不存在")
-        sys.exit()
 
-    for p in path_list:
-        status = "✅存在" if os.path.exists(p) else "❌不存在"
-        print(f"{status} | {p}")
+def force_save_and_close_notepad():
+    NOTEPAD_CLASS = "Notepad"
+    txt_hwnds = []
 
-elif run_mode == 2:
-    print("【正常运行模式】开始打开")
-    if not path_list:
-        print("清单为空或文件不存在")
-        sys.exit()
+    def enum_callback(hwnd, extra):
+        if win32gui.GetClassName(hwnd) == NOTEPAD_CLASS:
+            txt_hwnds.append(hwnd)
+        return True
 
-    for p in path_list:
-        if not os.path.exists(p):
-            print(f"❌跳过，不存在：{p}")
+    win32gui.EnumWindows(enum_callback, None)
+    print(f"\n枚举到 {len(txt_hwnds)} 个 Notepad 类窗口")
+    real_main_hwnds = [hwnd for hwnd in txt_hwnds if is_real_notepad_main_window(hwnd)]
+    print(f"识别为真正记事本主窗口 {len(real_main_hwnds)} 个")
+
+    for hwnd in real_main_hwnds:
+        if not win32gui.IsWindow(hwnd):
             continue
-
+        title = win32gui.GetWindowText(hwnd)
+        print(f"处理记事本主窗口: {title} (句柄: {hwnd})")
         try:
-            if os.path.isdir(p):
-                print(f"📂 定位文件夹：{p}")
-                cmd = f'explorer /select,"{p}"'
-                subprocess.Popen(cmd, shell=True, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            try:
+                win32gui.SetForegroundWindow(hwnd)
+            except Exception:
+                pass
+            time.sleep(0.4)
+            send_ctrl_s(hwnd)
+            edit_hwnd = win32gui.FindWindowEx(hwnd, None, "Edit", None)
+            if edit_hwnd:
+                win32gui.SendMessage(edit_hwnd, win32con.EM_EMPTYUNDOBUFFER, 0, 0)
+            win32gui.SendMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+            time.sleep(0.7)
+            if win32gui.IsWindow(hwnd):
+                _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                try:
+                    p = psutil.Process(pid)
+                    p.terminate()
+                    print(f"记事本窗口未响应，已强制终止进程 {pid}")
+                except psutil.NoSuchProcess:
+                    print(f"进程 {pid} 已经退出")
             else:
-                if p.lower().endswith(".exe"):
-                    print(f"⚙️ 启动程序：{p}")
-                    if "code.exe" in p.lower():
-                        # VSCode单独处理：切断IO管道 + DETACHED_PROCESS彻底脱离父控制台
-                        subprocess.Popen(
-                            [p],
-                            stdin=subprocess.DEVNULL,
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL,
-                            creationflags=subprocess.DETACHED_PROCESS,
-                        )
-                    else:
-                        # Ditto等其他exe保持原有标记
-                        subprocess.Popen([p], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-                else:
-                    print(f"📄 打开文档：{p}")
-                    os.startfile(p)
-            time.sleep(delay_sec)
+                print(f"记事本窗口 {title} 已正常关闭")
+            time.sleep(0.2)
         except Exception as e:
-            print(f"⚠️ 打开异常：{p}")
-            print(f"错误信息：{str(e)}")
-else:
-    print(f"错误：run_mode={run_mode}，只能是1或2")
+            print(f"处理记事本出错: {str(e)}")
+    print("记事本处理完成")
+
+
+def cancel_shutdown():
+    try:
+        result = subprocess.run(["shutdown", "/a"], capture_output=True, text=True)
+        if result.returncode == 0:
+            print("\n✅ 关机已成功中止")
+        else:
+            print(f"\n⚠️ 中止关机失败：{result.stderr.strip()}")
+        return result.returncode == 0
+    except Exception as e:
+        print(f"\n⚠️ 中止关机发生异常：{repr(e)}")
+        return False
+
+
+def start_shutdown(countdown_sec: int):
+    try:
+        print(f"\n将在{countdown_sec}秒后关机...")
+        subprocess.run(["shutdown", "/s", "/t", str(countdown_sec)], check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"\n⚠️ 关机命令执行失败: {str(e)}")
+        return False
+
+
+if __name__ == "__main__":
+    close_all_word_documents()
+    force_save_and_close_notepad()
+    # start_shutdown(SHUTDOWN_DELAY)
