@@ -2,7 +2,7 @@ import subprocess
 
 
 def call_py_script(
-    py_script_fullpath: str = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old\A试\make_folder.py",
+    py_script_fullpath: str = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main\App\module\batch_open_file_list.py",
     *args
 ) -> int:
     """
@@ -22,9 +22,7 @@ def call_py_script(
 if __name__ == "__main__":
     # ====================== 配置区 ======================
     # 整合为一个脚本路径变量，切换脚本只改这一行
-    script_path = (
-        r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main_old\A试\test.py"
-    )
+    script_path = r"E:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main\App\module\batch_open_file_list.py"
 
     arg_single = r"F:\备份盘\带零文件夹_同\005_计算机科学、程式、资料,硬件\005_400_电脑编程_1\005.490_main\App\启动热点"
     arg_m1 = "第一个参数"
@@ -32,7 +30,7 @@ if __name__ == "__main__":
     arg_m3 = "第三个参数"
     # ===================================================
 
-    run_mode = 2  # 1=无参 | 2=单参 | 3=多参
+    run_mode = 1  # 1=无参 | 2=单参 | 3=多参
     ret = -1
 
     if run_mode == 1:
