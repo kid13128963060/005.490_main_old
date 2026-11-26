@@ -1,3 +1,3 @@
 ﻿from Combination_Module.run_python_script import run_python_script, run_script_capture, run_script_get_stdout
 
-run_python_script("open_plus_close_wifi")
+run_python_script("open_wifi")
